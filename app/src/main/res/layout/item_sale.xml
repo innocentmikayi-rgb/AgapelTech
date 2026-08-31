@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="?android:attr/selectableItemBackground">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/txtSaleParticulars"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Item Name Here"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"/>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:gravity="end">
+            <TextView
+                android:id="@+id/txtSaleDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="18/06/2026"
+                android:textSize="12sp"
+                android:textColor="?android:attr/textColorSecondary"/>
+            <TextView
+                android:id="@+id/txtSaleTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="12:00 PM"
+                android:textSize="10sp"
+                android:textColor="?android:attr/textColorSecondary"
+                android:textStyle="italic"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/txtSaleCustomer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Customer: John Doe (256...)"
+        android:textSize="12sp"
+        android:textColor="?attr/colorPrimary"
+        android:layout_marginTop="2dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="4dp"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/txtSaleDetails"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Qty: 2 x UGX 5,000"
+            android:textSize="14sp"
+            android:textColor="?android:attr/textColorSecondary"/>
+
+        <TextView
+            android:id="@+id/txtSaleStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="PAID"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:paddingLeft="6dp"
+android:paddingRight="6dp"
+android:paddingTop="2dp"
+android:paddingBottom="2dp"
+            android:textColor="#FFFFFF"
+            android:background="#2E7D32"/>
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/txtSaleBalanceOwed"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Balance Owed: UGX 2,000"
+        android:textSize="13sp"
+        android:textStyle="italic"
+        android:textColor="#C62828"
+        android:layout_marginTop="2dp"
+        android:visibility="gone"/>
+
+</LinearLayout>

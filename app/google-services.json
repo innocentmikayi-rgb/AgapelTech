@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "195436081030",
+    "project_id": "myshopapp-3941d",
+    "storage_bucket": "myshopapp-3941d.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:195436081030:android:dc2d1c43f6689f42cc0607",
+        "android_client_info": {
+          "package_name": "com.agapeltech.myapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAoBygQRJFF-JB9cSJBdA7Sw48mzYrAQwA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

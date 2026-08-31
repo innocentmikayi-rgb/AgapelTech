@@ -1,0 +1,24 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Dark Theme -->
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary brand color. -->
+        <item name="colorPrimary">@color/md_primary_dark_mode</item>
+        <item name="colorPrimaryVariant">#000000</item>
+        <item name="colorOnPrimary">#000000</item>
+
+        <!-- Secondary brand color. -->
+        <item name="colorSecondary">@color/md_secondary_dark_mode</item>
+        <item name="colorSecondaryVariant">@color/md_secondary_dark_mode</item>
+        <item name="colorOnSecondary">#000000</item>
+
+        <!-- UI Colors -->
+        <item name="android:windowBackground">@color/md_background_dark_mode</item>
+        <item name="colorSurface">@color/md_surface_dark_mode</item>
+        <item name="colorOnSurface">#EEEEEE</item>
+        <item name="colorSurfaceVariant">#2C2C2C</item>
+        <item name="colorError">#CF6679</item>
+
+        <!-- Status bar color. -->
+        <item name="android:statusBarColor">#000000</item>
+    </style>
+</resources>

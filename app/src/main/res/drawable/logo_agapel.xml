@@ -1,0 +1,25 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="100"
+    android:viewportHeight="100">
+
+    <!-- Outer Circle Background -->
+    <path
+        android:fillColor="#0D3B84"
+        android:pathData="M50,2C22.39,2 0,24.39 0,52c0,27.61 22.39,50 50,50s50,-22.39 50,-50C100,24.39 77.61,2 50,2z" />
+
+    <!-- Stylized 'A' -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M50,18L25,75h10l6,-15h18l6,15h10L50,18zM43,52l7,-18l7,18H43z" />
+
+    <!-- Growth Arrow (Business Symbol) -->
+    <path
+        android:fillColor="#1A62D6"
+        android:pathData="M45,45h10v5h-10z M60,40h10v10h-10z M30,50h10v5h-10z" />
+
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M75,30l-15,0l5,5l-10,10l-10,-10l-15,15l5,5l10,-10l10,10l15,-15l5,5z" />
+</vector>
