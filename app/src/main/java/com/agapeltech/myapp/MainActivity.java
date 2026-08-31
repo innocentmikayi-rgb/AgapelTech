@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     TextView txtReportTotalSales, txtReportTotalProfit, txtReportTotalCredit;
     
-    TextView txtDashNetProfit, txtDashGrossSales, txtDashExpenses, txtDashDebt, txtWeeklyGrowth;
+    TextView txtDashNetProfit, txtDashGrossSales, txtDashExpenses, txtDashDebt, txtWeeklyGrowth, txtDashLowStockBadge;
     TextView txtComparisonTitle, txtComparisonValue, txtGraphTitle;
     LineChart salesLineChart;
     PieChart profitPieChart;
@@ -205,6 +205,7 @@ public class MainActivity extends AppCompatActivity {
         txtDashGrossSales = findViewById(R.id.txtDashGrossSales);
         txtDashExpenses = findViewById(R.id.txtDashExpenses);
         txtDashDebt = findViewById(R.id.txtDashDebt);
+        txtDashLowStockBadge = findViewById(R.id.txtDashLowStockBadge);
         txtWeeklyGrowth = findViewById(R.id.txtWeeklyGrowth);
         txtComparisonTitle = findViewById(R.id.txtComparisonTitle);
         txtComparisonValue = findViewById(R.id.txtComparisonValue);
@@ -378,6 +379,17 @@ public class MainActivity extends AppCompatActivity {
         txtDashGrossSales.setText("UGX " + formatMoney(monthlySales));
         txtDashExpenses.setText("UGX " + formatMoney(monthlyExp));
         txtDashNetProfit.setText("UGX " + formatMoney(monthlyProfit - monthlyExp));
+        
+        // Update Low Stock Badge
+        int lowStockCount = 0;
+        Cursor stockCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials WHERE stock_qty <= low_stock_threshold", null);
+        if(stockCur.moveToFirst()) lowStockCount = stockCur.getInt(0);
+        stockCur.close();
+        
+        if (txtDashLowStockBadge != null) {
+            txtDashLowStockBadge.setText(lowStockCount + " Items Low Stock");
+            txtDashLowStockBadge.setTextColor(lowStockCount > 0 ? Color.parseColor("#FFD54F") : Color.parseColor("#81C784"));
+        }
         
         // Comparison Metric: Sales vs Yesterday
         HashMap<String, Double> todayTotals = dbHelper.getDailyTotals(today);

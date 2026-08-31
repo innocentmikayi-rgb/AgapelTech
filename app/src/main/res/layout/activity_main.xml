@@ -224,6 +224,16 @@
                         android:textColor="?attr/colorOnPrimary"
                         android:textSize="24sp"
                         android:textStyle="bold" />
+                    <TextView
+                        android:id="@+id/txtDashLowStockBadge"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0 Items Low Stock"
+                        android:textColor="#FFD54F"
+                        android:textSize="12sp"
+                        android:textStyle="bold"
+                        android:layout_marginTop="4dp"
+                        android:visibility="visible"/>
                 </LinearLayout>
 
                 <GridLayout
