@@ -1005,8 +1005,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void checkForUpdates() {
-        // Updated to use your GitHub details
-        String githubApiUrl = "https://api.github.com/repos/innocentmikayi/innocentmikayi-rgb/releases/latest";
+        // Corrected to use your AgapelTech GitHub repository
+        String githubApiUrl = "https://api.github.com/repos/innocentmikayi-rgb/AgapelTech/releases/latest";
 
         new Thread(() -> {
             try {
