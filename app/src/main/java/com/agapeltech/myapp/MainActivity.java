@@ -1025,10 +1025,14 @@ public class MainActivity extends AppCompatActivity {
                 java.net.URL url = new java.net.URL(githubApiUrl);
                 java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
+                // GitHub API requires a User-Agent header
+                conn.setRequestProperty("User-Agent", "AgapelTech-App");
+                conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
                 conn.connect();
 
-                if (conn.getResponseCode() == 200) {
-                    java.util.Scanner scanner = new java.util.Scanner(url.openStream());
+                int responseCode = conn.getResponseCode();
+                if (responseCode == 200) {
+                    java.util.Scanner scanner = new java.util.Scanner(conn.getInputStream());
                     String response = scanner.useDelimiter("\\A").next();
                     scanner.close();
 
@@ -1043,11 +1047,13 @@ public class MainActivity extends AppCompatActivity {
                     } else {
                         runOnUiThread(() -> Toast.makeText(this, "You are on the latest version!", Toast.LENGTH_SHORT).show());
                     }
+                } else if (responseCode == 404) {
+                    runOnUiThread(() -> Toast.makeText(this, "No updates found (No releases published yet).", Toast.LENGTH_SHORT).show());
                 } else {
-                    runOnUiThread(() -> Toast.makeText(this, "Could not check for updates. Please try later.", Toast.LENGTH_SHORT).show());
+                    runOnUiThread(() -> Toast.makeText(this, "Update check failed (Code: " + responseCode + "). Please try later.", Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                runOnUiThread(() -> Toast.makeText(this, "Update Error: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         }).start();
     }
