@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_tools"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:textColor="#0D3B84"
+        android:layout_marginBottom="24dp"/>
+
+    <Button
+        android:id="@+id/adminLoginBtn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/admin_login"
+        android:backgroundTint="#0D3B84"
+        android:textColor="?attr/colorOnPrimary"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnManageExpenses"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/manage_expense_records"
+        android:backgroundTint="#555555"
+        android:textColor="?attr/colorOnPrimary"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnSwitchTheme"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/switch_theme"
+        android:backgroundTint="#000000"
+        android:textColor="?attr/colorOnPrimary"
+        android:layout_marginBottom="16dp" />
+
+    <Button
+        android:id="@+id/btnCheckUpdate"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/check_for_updates"
+        android:backgroundTint="#1565C0"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="24dp" />
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/app_version"
+        android:textColor="#888888"
+        android:textSize="12sp"/>
+</LinearLayout>

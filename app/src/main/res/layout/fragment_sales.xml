@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:fillViewport="true"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/record_new_sale"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorPrimary"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/particulars_item_name"
+            android:textStyle="bold"
+            android:textColor="#333333"/>
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+            <AutoCompleteTextView
+                android:id="@+id/saleParticulars"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:hint="@string/type_to_search_or_scan_hint"
+                android:completionThreshold="1"
+                android:singleLine="true"
+                android:autofillHints="none"
+                android:inputType="text" />
+            <ImageButton
+                android:id="@+id/btnScanSale"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:src="@drawable/ic_scan"
+                android:background="?attr/selectableItemBackground"
+                app:tint="?attr/colorPrimary"
+                android:contentDescription="@string/type_to_search_or_scan_hint" />
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/customer_name"
+            android:textStyle="bold"
+            android:textColor="#333333"/>
+        <EditText
+            android:id="@+id/saleCustomerName"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/enter_customer_name_optional_hint"
+            android:singleLine="true"
+            android:layout_marginBottom="12dp"
+            android:autofillHints="name"
+            android:inputType="textPersonName" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/customer_phone"
+            android:textStyle="bold"
+            android:textColor="#333333"/>
+        <EditText
+            android:id="@+id/saleCustomerPhone"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/enter_customer_phone_hint"
+            android:singleLine="true"
+            android:layout_marginBottom="12dp"
+            android:autofillHints="phone"
+            android:inputType="phone" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/quantity_qty"
+            android:textStyle="bold"
+            android:textColor="#333333"/>
+        <EditText
+            android:id="@+id/saleQty"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/enter_quantity_hint"
+            android:inputType="number"
+            android:layout_marginBottom="12dp"
+            android:autofillHints="none" />
+
+        <TextView
+            android:id="@+id/txtSaleBPLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/buying_price_bp_per_unit"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"/>
+        <EditText
+            android:id="@+id/saleBP"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/auto_filled_from_inventory_hint"
+            android:inputType="numberDecimal"
+            android:layout_marginBottom="12dp"
+            android:autofillHints="none" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/selling_price_sp_per_unit"
+            android:textStyle="bold"
+            android:textColor="#333333"/>
+        <EditText
+            android:id="@+id/saleSP"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/enter_selling_price_hint"
+            android:inputType="numberDecimal"
+            android:layout_marginBottom="12dp"
+            android:autofillHints="none" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/actual_amount_received_paid"
+            android:textStyle="bold"
+            android:textColor="#333333"/>
+        <EditText
+            android:id="@+id/saleActualAmount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/enter_actual_cash_collected_hint"
+            android:inputType="numberDecimal"
+            android:layout_marginBottom="12dp"
+            android:autofillHints="none" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:background="?attr/colorSurfaceVariant"
+            android:padding="12dp"
+            android:layout_marginBottom="16dp"
+            android:baselineAligned="false"
+            android:weightSum="2">
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/actual_profit"
+                    android:textSize="12sp"
+                    android:textColor="#555555"/>
+                <TextView
+                    android:id="@+id/txtLiveProfit"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ugx_0"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#2E7D32"/>
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:orientation="vertical">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/credit_balance"
+                    android:textSize="12sp"
+                    android:textColor="#555555"/>
+                <TextView
+                    android:id="@+id/txtLiveBalance"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/ugx_0"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:textColor="#C62828"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/btnSaveSale"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorPrimary"
+            android:text="@string/submit_transaction_log"
+            android:textColor="?attr/colorOnPrimary"
+            android:textStyle="bold"
+            android:padding="12dp"/>
+
+    </LinearLayout>
+</ScrollView>

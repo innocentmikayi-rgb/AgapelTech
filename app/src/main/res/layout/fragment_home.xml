@@ -1,0 +1,344 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <ImageView
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:src="@drawable/logo_agapel"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
+            android:contentDescription="@string/logo_description"/>
+
+        <TextView
+            android:id="@+id/txtDashboardGreeting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Welcome!"
+            android:textSize="18sp"
+            android:textColor="#555555" />
+
+        <TextView
+            android:id="@+id/txtDashboardInventoryCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="0 Products in Stock"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="@string/business_dashboard"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="#0D3B84"
+            android:layout_marginBottom="16dp"/>
+
+        <!-- Net Profit Card -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorPrimary"
+            android:padding="20dp"
+            android:orientation="vertical"
+            android:layout_marginBottom="16dp">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/estimated_net_profit_month"
+                android:textColor="?attr/colorOnPrimary"
+                android:alpha="0.7"
+                android:textSize="12sp" />
+            <TextView
+                android:id="@+id/txtDashNetProfit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/ugx_0"
+                android:textColor="?attr/colorOnPrimary"
+                android:textSize="24sp"
+                android:textStyle="bold" />
+            <TextView
+                android:id="@+id/txtDashLowStockBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="0 Items Low Stock"
+                android:textColor="#FFD54F"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:layout_marginTop="4dp"
+                android:visibility="visible"/>
+        </LinearLayout>
+
+        <GridLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:columnCount="2"
+            android:rowCount="2">
+
+            <!-- Gross Sales -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:background="?attr/colorSurface"
+                android:padding="16dp"
+                android:layout_margin="4dp"
+                android:orientation="vertical"
+                android:elevation="2dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/gross_sales"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/txtDashGrossSales"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/zero"
+                    android:textStyle="bold"
+                    android:textColor="?attr/colorPrimary" />
+            </LinearLayout>
+
+            <!-- Total Expenses -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:background="?attr/colorSurface"
+                android:padding="16dp"
+                android:layout_margin="4dp"
+                android:orientation="vertical"
+                android:elevation="2dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/expenses"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/txtDashExpenses"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/zero"
+                    android:textStyle="bold"
+                    android:textColor="@color/error_red" />
+            </LinearLayout>
+
+            <!-- Total Debt -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:background="?attr/colorSurface"
+                android:padding="16dp"
+                android:layout_margin="4dp"
+                android:orientation="vertical"
+                android:elevation="2dp">
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/total_debt"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/txtDashDebt"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/zero"
+                    android:textStyle="bold"
+                    android:textColor="@color/warning_orange" />
+            </LinearLayout>
+
+            <!-- Comparison Metrics -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_columnWeight="1"
+                android:background="?attr/colorSurface"
+                android:padding="16dp"
+                android:layout_margin="4dp"
+                android:orientation="vertical"
+                android:elevation="2dp">
+                <TextView
+                    android:id="@+id/txtComparisonTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/growth_info"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/txtComparisonValue"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/calculated"
+                    android:textStyle="bold"
+                    android:textColor="@color/success_green"
+                    android:textSize="12sp" />
+            </LinearLayout>
+        </GridLayout>
+
+        <!-- Analytics Section -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurface"
+            android:padding="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            android:elevation="2dp">
+
+            <TextView
+                android:id="@+id/txtGraphTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/weekly_sales_performance"
+                android:textStyle="bold"
+                android:textColor="?android:attr/textColorPrimary"
+                android:layout_marginBottom="12dp"/>
+
+            <RadioGroup
+                android:id="@+id/rgGraphRange"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="12dp">
+                <RadioButton
+                    android:id="@+id/rbWeekly"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/weekly"
+                    android:checked="true"
+                    android:textSize="11sp" />
+                <RadioButton
+                    android:id="@+id/rbMonthly"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/monthly"
+                    android:textSize="11sp" />
+                <RadioButton
+                    android:id="@+id/rbQuarterly"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/quarterly"
+                    android:textSize="11sp" />
+                <RadioButton
+                    android:id="@+id/rbYearly"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/yearly"
+                    android:textSize="11sp" />
+            </RadioGroup>
+
+            <com.github.mikephil.charting.charts.LineChart
+                android:id="@+id/salesLineChart"
+                android:layout_width="match_parent"
+                android:layout_height="200dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginTop="16dp"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/txtWeeklyGrowth"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/weekly_growth_placeholder"
+                    android:textColor="@color/success_green"
+                    android:textStyle="bold"
+                    android:textSize="12sp"/>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Profit/Expense Analysis -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?attr/colorSurface"
+            android:padding="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            android:elevation="2dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/profit_vs_expenses_monthly"
+                android:textStyle="bold"
+                android:textColor="?android:attr/textColorPrimary"
+                android:layout_marginBottom="12dp"/>
+
+            <com.github.mikephil.charting.charts.PieChart
+                android:id="@+id/dashProfitPieChart"
+                android:layout_width="match_parent"
+                android:layout_height="250dp" />
+        </LinearLayout>
+
+        <!-- Low Stock Alert Section -->
+        <LinearLayout
+            android:id="@+id/layoutLowStockAlert"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/low_stock_bg"
+            android:padding="16dp"
+            android:layout_marginTop="8dp"
+            android:orientation="vertical"
+            android:elevation="2dp"
+            android:visibility="gone">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/low_stock_alerts"
+                android:textStyle="bold"
+                android:textColor="#E65100"
+                android:layout_marginBottom="8dp"/>
+
+            <TextView
+                android:id="@+id/txtLowStockItems"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Loading..."
+                android:textColor="#BF360C"
+                android:textSize="12sp"/>
+        </LinearLayout>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/quick_actions"
+            android:textStyle="bold"
+            android:layout_marginTop="16dp"
+            android:layout_marginBottom="8dp"/>
+
+        <Button
+            android:id="@+id/btnQuickExpense"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/record_new_expense"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+        <Button
+            android:id="@+id/btnQuickDebt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/view_debtors_list"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"/>
+
+    </LinearLayout>
+</ScrollView>

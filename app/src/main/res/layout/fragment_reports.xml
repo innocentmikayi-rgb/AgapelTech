@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:layout_marginBottom="12dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/daily_reports"
+            android:textSize="18sp"
+            android:textStyle="bold"
+            android:textColor="#0D3B84"/>
+
+        <Button
+            android:id="@+id/btnExportPdf"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/pdf"
+            android:backgroundTint="#D32F2F"
+            android:textColor="?attr/colorOnPrimary"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnExportExcel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/excel"
+            android:backgroundTint="#1B5E20"
+            android:textColor="?attr/colorOnPrimary"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:layout_marginEnd="8dp"/>
+
+        <Button
+            android:id="@+id/btnShareReport"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/share"
+            android:backgroundTint="#2E7D32"
+            android:textColor="?attr/colorOnPrimary"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Daily Summary Card -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="#E9EFF8"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"
+        android:orientation="horizontal"
+        android:baselineAligned="false"
+        android:weightSum="3">
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/total_sales_caps"
+                android:textSize="12sp"
+                android:textColor="#555555"/>
+            <TextView
+                android:id="@+id/txtReportTotalSales"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/zero"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#0D3B84"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/layoutReportProfit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/profit_caps"
+                android:textSize="12sp"
+                android:textColor="?android:attr/textColorSecondary"/>
+            <TextView
+                android:id="@+id/txtReportTotalProfit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/zero"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#2E7D32"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:gravity="center">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/credit_caps"
+                android:textSize="12sp"
+                android:textColor="#555555"/>
+            <TextView
+                android:id="@+id/txtReportTotalCredit"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/zero"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:textColor="#C62828"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Profit by Category Chart -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="250dp"
+        android:background="?attr/colorSurface"
+        android:padding="12dp"
+        android:layout_marginBottom="12dp"
+        android:orientation="vertical"
+        android:elevation="2dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/profit_by_category"
+            android:textStyle="bold"
+            android:textColor="?android:attr/textColorPrimary"
+            android:layout_marginBottom="8dp"/>
+        <com.github.mikephil.charting.charts.PieChart
+            android:id="@+id/profitPieChart"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewSales"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:scrollbars="vertical" />
+</LinearLayout>
