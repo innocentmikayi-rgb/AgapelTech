@@ -46,10 +46,18 @@ public class MaterialRecyclerViewAdapter extends RecyclerView.Adapter<MaterialRe
         holder.txtBuyPrice.setText(item.get("buy"));
         holder.txtSellPrice.setText(item.get("sell"));
 
-        int qty = Integer.parseInt(item.get("qty_raw"));
-        int threshold = Integer.parseInt(item.get("threshold"));
+        int qty = 0;
+        int threshold = 5;
+        try {
+            String qtyStr = item.get("qty_raw");
+            String thresholdStr = item.get("threshold");
+            if (qtyStr != null) qty = Integer.parseInt(qtyStr);
+            if (thresholdStr != null) threshold = Integer.parseInt(thresholdStr);
+        } catch (NumberFormatException e) {
+            android.util.Log.e("MaterialAdapter", "Error parsing qty/threshold");
+        }
 
-        holder.txtStockQty.setText("Stock: " + qty);
+        holder.txtStockQty.setText(String.format(java.util.Locale.US, "Stock: %d", qty));
         
         if (qty <= threshold) {
             holder.txtStockQty.setTextColor(Color.RED);

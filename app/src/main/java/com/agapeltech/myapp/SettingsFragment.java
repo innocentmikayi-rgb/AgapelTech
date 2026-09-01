@@ -15,7 +15,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
-import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -30,6 +29,8 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.Objects;
 
 public class SettingsFragment extends Fragment {
 
@@ -42,8 +43,8 @@ public class SettingsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 
-        dbHelper = new DBHelper(getContext());
-        currentUserRole = getContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("role", "STAFF");
+        dbHelper = new DBHelper(requireContext());
+        currentUserRole = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("role", "STAFF");
 
         initViews(view);
         setupListeners();
@@ -69,22 +70,22 @@ public class SettingsFragment extends Fragment {
     }
 
     private void showLogoutDialog() {
-        new AlertDialog.Builder(getContext())
+        new AlertDialog.Builder(requireContext())
                 .setTitle("Logout")
                 .setMessage("Are you sure you want to logout?")
                 .setPositiveButton("Logout", (dialog, which) -> {
-                    SharedPreferences.Editor editor = getContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).edit();
+                    SharedPreferences.Editor editor = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).edit();
                     editor.clear();
                     editor.apply();
                     startActivity(new Intent(getActivity(), LoginActivity.class));
-                    getActivity().finish();
+                    if (getActivity() != null) getActivity().finish();
                 })
                 .setNegativeButton("Cancel", null)
                 .show();
     }
 
     private void toggleTheme() {
-        SharedPreferences prefs = getContext().getSharedPreferences("app_settings", Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireContext().getSharedPreferences("app_settings", Context.MODE_PRIVATE);
         boolean isDarkMode = prefs.getBoolean("dark_mode", false);
         prefs.edit().putBoolean("dark_mode", !isDarkMode).apply();
 
@@ -94,7 +95,7 @@ public class SettingsFragment extends Fragment {
     }
 
     private void updateThemeButtonUI() {
-        boolean isDarkMode = getContext().getSharedPreferences("app_settings", Context.MODE_PRIVATE).getBoolean("dark_mode", false);
+        boolean isDarkMode = requireContext().getSharedPreferences("app_settings", Context.MODE_PRIVATE).getBoolean("dark_mode", false);
         btnSwitchTheme.setText(isDarkMode ? "SWITCH TO LIGHT MODE" : "SWITCH TO DARK MODE");
         btnSwitchTheme.setBackgroundColor(isDarkMode ? Color.WHITE : Color.BLACK);
         btnSwitchTheme.setTextColor(isDarkMode ? Color.BLACK : Color.WHITE);
@@ -122,18 +123,18 @@ public class SettingsFragment extends Fragment {
                     String latestVersion = json.getString("tag_name");
                     String downloadUrl = json.getString("html_url");
 
-                    String currentVersion = "v" + getContext().getPackageManager().getPackageInfo(getContext().getPackageName(), 0).versionName;
+                    String currentVersion = "v" + requireContext().getPackageManager().getPackageInfo(requireContext().getPackageName(), 0).versionName;
 
-                    if (!latestVersion.equals(currentVersion)) {
-                        getActivity().runOnUiThread(() -> showUpdateDialog(latestVersion, downloadUrl));
+                    if (!Objects.equals(latestVersion, currentVersion)) {
+                        if (getActivity() != null) getActivity().runOnUiThread(() -> showUpdateDialog(latestVersion, downloadUrl));
                     } else {
-                        getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "You are on the latest version!", Toast.LENGTH_SHORT).show());
+                        if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "You are on the latest version!", Toast.LENGTH_SHORT).show());
                     }
                 } else {
-                    getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Update check failed (Code: " + responseCode + ")", Toast.LENGTH_SHORT).show());
+                    if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Update check failed (Code: " + responseCode + ")", Toast.LENGTH_SHORT).show());
                 }
             } catch (Exception e) {
-                getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Update Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Update Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
             }
         }).start();
     }
@@ -151,13 +152,13 @@ public class SettingsFragment extends Fragment {
     }
 
     private void showExpenseRecordsDialog() {
-        ListView eList = new ListView(getContext());
+        android.widget.ListView eList = new android.widget.ListView(requireContext());
         ArrayList<HashMap<String, String>> eData = new ArrayList<>();
         Cursor c = dbHelper.getAllExpenses();
         if (c != null) {
             while (c.moveToNext()) {
                 HashMap<String, String> map = new HashMap<>();
-                map.put("id", String.valueOf(c.getInt(0)));
+                map.put("id", "" + c.getInt(0));
                 map.put("date", c.getString(1));
                 map.put("desc", c.getString(2));
                 map.put("amt", MainActivity.formatMoney(c.getDouble(3)));
@@ -167,7 +168,7 @@ public class SettingsFragment extends Fragment {
             c.close();
         }
 
-        SimpleAdapter eAdapter = new SimpleAdapter(getContext(), eData, android.R.layout.simple_list_item_2,
+        SimpleAdapter eAdapter = new SimpleAdapter(requireContext(), eData, android.R.layout.simple_list_item_2,
                 new String[]{"desc", "amt"}, new int[]{android.R.id.text1, android.R.id.text2}) {
             @Override
             public View getView(int pos, View convert, ViewGroup parent) {
@@ -175,25 +176,26 @@ public class SettingsFragment extends Fragment {
                 TextView t1 = v.findViewById(android.R.id.text1);
                 TextView t2 = v.findViewById(android.R.id.text2);
                 HashMap<String, String> m = eData.get(pos);
-                t1.setText(m.get("date") + " - " + m.get("desc") + " [" + m.get("cat") + "]");
-                t2.setText("UGX " + m.get("amt"));
+                t1.setText(String.format(Locale.US, "%s - %s [%s]", m.get("date"), m.get("desc"), m.get("cat")));
+                t2.setText(String.format(Locale.US, "UGX %s", m.get("amt")));
                 t2.setTextColor(Color.RED);
                 return v;
             }
         };
         eList.setAdapter(eAdapter);
 
-        AlertDialog dialog = new AlertDialog.Builder(getContext()).setTitle("Expense Records").setView(eList).setPositiveButton("Close", null).create();
+        AlertDialog dialog = new AlertDialog.Builder(requireContext()).setTitle("Expense Records").setView(eList).setPositiveButton("Close", null).create();
         eList.setOnItemClickListener((parent, view, position, id) -> {
             if (!"MANAGER".equals(currentUserRole)) return;
             HashMap<String, String> exp = eData.get(position);
             String[] options = {"Edit Expense", "Delete Expense"};
-            new AlertDialog.Builder(getContext()).setTitle("Manage Expense").setItems(options, (d, which) -> {
+            new AlertDialog.Builder(requireContext()).setTitle("Manage Expense").setItems(options, (d, which) -> {
                 if (which == 0) showEditExpenseDialog(exp, dialog);
                 else {
-                    dbHelper.markExpenseForDeletion(Integer.parseInt(exp.get("id")));
+                    String expId = exp.get("id");
+                    if (expId != null) dbHelper.markExpenseForDeletion(Integer.parseInt(expId));
                     MainActivity activity = (MainActivity) getActivity();
-                    if (activity != null && NetworkHelper.isOnline(getContext())) activity.syncOfflineData();
+                    if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
                     dialog.dismiss(); showExpenseRecordsDialog();
                 }
             }).show();
@@ -202,18 +204,20 @@ public class SettingsFragment extends Fragment {
     }
 
     private void showEditExpenseDialog(HashMap<String, String> exp, AlertDialog parentDialog) {
-        LinearLayout layout = new LinearLayout(getContext()); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(50, 40, 50, 10);
-        final EditText ed = new EditText(getContext()); ed.setText(exp.get("desc")); layout.addView(ed);
-        final EditText ea = new EditText(getContext()); ea.setText(exp.get("amt")); ea.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL); layout.addView(ea);
+        LinearLayout layout = new LinearLayout(requireContext()); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(50, 40, 50, 10);
+        final EditText ed = new EditText(requireContext()); ed.setText(exp.get("desc")); layout.addView(ed);
+        final EditText ea = new EditText(requireContext()); ea.setText(exp.get("amt")); ea.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL); layout.addView(ea);
         String[] cats = {"Rent", "Electricity", "Water", "Salary", "Transport", "Stock", "Other"};
-        final Spinner sp = new Spinner(getContext()); sp.setAdapter(new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_dropdown_item, cats));
-        for(int i=0; i<cats.length; i++) if(cats[i].equals(exp.get("cat"))) sp.setSelection(i);
+        final Spinner sp = new Spinner(requireContext()); sp.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, cats));
+        String currentExpCat = exp.get("cat");
+        for(int i=0; i<cats.length; i++) if(Objects.equals(cats[i], currentExpCat)) sp.setSelection(i);
         layout.addView(sp);
         
-        new AlertDialog.Builder(getContext()).setTitle("Edit Expense: " + exp.get("date")).setView(layout).setPositiveButton("Update", (d, w) -> {
-            dbHelper.updateExpenseRecord(Integer.parseInt(exp.get("id")), ed.getText().toString(), Double.parseDouble(ea.getText().toString()), sp.getSelectedItem().toString());
+        new AlertDialog.Builder(requireContext()).setTitle("Edit Expense: " + exp.get("date")).setView(layout).setPositiveButton("Update", (d, w) -> {
+            String expId = exp.get("id");
+            if (expId != null) dbHelper.updateExpenseRecord(Integer.parseInt(expId), ed.getText().toString(), Double.parseDouble(ea.getText().toString()), sp.getSelectedItem().toString());
             MainActivity activity = (MainActivity) getActivity();
-            if (activity != null && NetworkHelper.isOnline(getContext())) activity.syncOfflineData();
+            if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
             parentDialog.dismiss(); showExpenseRecordsDialog();
         }).show();
     }

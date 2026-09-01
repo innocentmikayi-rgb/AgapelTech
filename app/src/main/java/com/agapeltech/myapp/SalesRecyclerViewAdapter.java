@@ -51,9 +51,15 @@ public class SalesRecyclerViewAdapter extends RecyclerView.Adapter<SalesRecycler
 
         String qty = sale.get("qty");
         String sp = sale.get("sp");
-        holder.txtSaleDetails.setText("Qty: " + qty + " x UGX " + sp);
+        holder.txtSaleDetails.setText(String.format(java.util.Locale.US, "Qty: %s x UGX %s", qty, sp));
 
-        double balance = Double.parseDouble(sale.get("balance"));
+        double balance = 0;
+        try {
+            String balStr = sale.get("balance");
+            if (balStr != null) balance = Double.parseDouble(balStr);
+        } catch (NumberFormatException e) {
+            android.util.Log.e("SalesAdapter", "Error parsing balance");
+        }
         if (balance > 0) {
             holder.txtSaleStatus.setText("CREDIT");
             holder.txtSaleStatus.setBackgroundColor(Color.parseColor("#C62828"));

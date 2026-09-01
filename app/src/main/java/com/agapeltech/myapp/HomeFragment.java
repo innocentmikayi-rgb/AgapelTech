@@ -32,13 +32,14 @@ import com.github.mikephil.charting.data.PieData;
 import com.github.mikephil.charting.data.PieDataSet;
 import com.github.mikephil.charting.data.PieEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
-import com.github.mikephil.charting.utils.ColorTemplate;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
+import java.util.Objects;
 
 public class HomeFragment extends Fragment {
 
@@ -59,10 +60,10 @@ public class HomeFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_home, container, false);
 
-        dbHelper = new DBHelper(getContext());
+        dbHelper = new DBHelper(requireContext());
         
         // Get username from SharedPreferences
-        currentUsername = getContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("username", "");
+        currentUsername = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("username", "");
 
         initViews(view);
         setupListeners();
@@ -108,55 +109,60 @@ public class HomeFragment extends Fragment {
     }
 
     public void loadDashboardData() {
-        String today = new SimpleDateFormat("dd/MM/yyyy").format(new Date());
-        String currentMonth = new SimpleDateFormat("MM/yyyy").format(new Date());
+        SimpleDateFormat sdfDate = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
+        SimpleDateFormat sdfMonth = new SimpleDateFormat("MM/yyyy", Locale.US);
+        String today = sdfDate.format(new Date());
+        String currentMonth = sdfMonth.format(new Date());
         
         Calendar cal = Calendar.getInstance();
         cal.add(Calendar.DAY_OF_YEAR, -1);
-        String yesterday = new SimpleDateFormat("dd/MM/yyyy").format(cal.getTime());
+        String yesterday = sdfDate.format(cal.getTime());
 
-        double monthlySales = 0, monthlyProfit = 0;
+        double monthlySalesTotal = 0, monthlyProfitTotal = 0;
         Cursor cSales = dbHelper.getMonthlySalesRecords("%" + currentMonth);
         if (cSales != null) {
             while (cSales.moveToNext()) { 
-                monthlySales += cSales.getDouble(8); 
-                monthlyProfit += cSales.getDouble(9); 
+                monthlySalesTotal += cSales.getDouble(8); 
+                monthlyProfitTotal += cSales.getDouble(9); 
             }
             cSales.close();
         }
         
         double monthlyExp = dbHelper.getMonthlyExpenses(currentMonth);
-        txtDashGrossSales.setText("UGX " + formatMoney(monthlySales));
-        txtDashExpenses.setText("UGX " + formatMoney(monthlyExp));
-        txtDashNetProfit.setText("UGX " + formatMoney(monthlyProfit - monthlyExp));
+        txtDashGrossSales.setText(String.format(Locale.US, "UGX %s", formatMoney(monthlySalesTotal)));
+        txtDashExpenses.setText(String.format(Locale.US, "UGX %s", formatMoney(monthlyExp)));
+        txtDashNetProfit.setText(String.format(Locale.US, "UGX %s", formatMoney(monthlyProfitTotal - monthlyExp)));
         
         // v1.0.3 New Features
-        txtDashboardGreeting.setText("Welcome, " + currentUsername + "!");
+        txtDashboardGreeting.setText(String.format(Locale.US, "Welcome, %s!", currentUsername));
         
         int totalProducts = 0;
         Cursor totalCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials", null);
         if(totalCur.moveToFirst()) totalProducts = totalCur.getInt(0);
         totalCur.close();
-        txtDashboardInventoryCount.setText(totalProducts + " Products in Inventory");
+        txtDashboardInventoryCount.setText(String.format(Locale.US, "%d Products in Inventory", totalProducts));
 
         // Low Stock Badge
         int lowStockCount = 0;
         Cursor stockCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials WHERE stock_qty <= low_stock_threshold", null);
         if(stockCur.moveToFirst()) lowStockCount = stockCur.getInt(0);
         stockCur.close();
-        txtDashLowStockBadge.setText(lowStockCount + " Items Low Stock");
+        txtDashLowStockBadge.setText(String.format(Locale.US, "%d Items Low Stock", lowStockCount));
         txtDashLowStockBadge.setTextColor(lowStockCount > 0 ? Color.parseColor("#FFD54F") : Color.parseColor("#81C784"));
 
         // Comparison Metric: Sales vs Yesterday
         HashMap<String, Double> todayTotals = dbHelper.getDailyTotals(today);
         HashMap<String, Double> yesterdayTotals = dbHelper.getDailyTotals(yesterday);
-        double todaySales = todayTotals.get("sales");
-        double yesterdaySales = yesterdayTotals.get("sales");
+        
+        Double todaySalesVal = todayTotals.get("sales");
+        Double yesterdaySalesVal = yesterdayTotals.get("sales");
+        double todaySales = todaySalesVal != null ? todaySalesVal : 0;
+        double yesterdaySales = yesterdaySalesVal != null ? yesterdaySalesVal : 0;
         
         txtComparisonTitle.setText("vs. Yesterday");
         if (yesterdaySales > 0) {
             double growth = ((todaySales - yesterdaySales) / yesterdaySales) * 100;
-            txtComparisonValue.setText(String.format("%s%.1f%% Sales", growth >= 0 ? "+" : "", growth));
+            txtComparisonValue.setText(String.format(Locale.US, "%s%.1f%% Sales", growth >= 0 ? "+" : "", growth));
             txtComparisonValue.setTextColor(growth >= 0 ? Color.parseColor("#2E7D32") : Color.RED);
         } else {
             txtComparisonValue.setText("New Day!");
@@ -190,22 +196,23 @@ public class HomeFragment extends Fragment {
     private void updateSalesChart(String range) {
         ArrayList<Entry> entries = new ArrayList<>();
         ArrayList<String> labels = new ArrayList<>();
-        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM");
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM", Locale.US);
         Calendar cal = Calendar.getInstance();
 
         int days = 7;
-        if (range.equals("monthly")) days = 30;
-        else if (range.equals("quarterly")) days = 90;
-        else if (range.equals("yearly")) days = 365;
+        if (Objects.equals(range, "monthly")) days = 30;
+        else if (Objects.equals(range, "quarterly")) days = 90;
+        else if (Objects.equals(range, "yearly")) days = 365;
 
-        txtGraphTitle.setText(range.substring(0, 1).toUpperCase() + range.substring(1) + " Sales Performance");
+        txtGraphTitle.setText(String.format(Locale.US, "%s Sales Performance", range.substring(0, 1).toUpperCase() + range.substring(1)));
 
         for (int i = days - 1; i >= 0; i--) {
             Calendar c = (Calendar) cal.clone();
             c.add(Calendar.DAY_OF_YEAR, -i);
-            String dateStr = new SimpleDateFormat("dd/MM/yyyy").format(c.getTime());
+            String dateStr = new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(c.getTime());
             HashMap<String, Double> totals = dbHelper.getDailyTotals(dateStr);
-            entries.add(new Entry(days - 1 - i, totals.get("sales").floatValue()));
+            Double salesVal = totals.get("sales");
+            entries.add(new Entry(days - 1 - i, salesVal != null ? salesVal.floatValue() : 0f));
             labels.add(sdf.format(c.getTime()));
         }
 
@@ -233,12 +240,11 @@ public class HomeFragment extends Fragment {
     }
 
     private void updateProfitPieChart() {
-        String currentMonth = new SimpleDateFormat("MM/yyyy").format(new Date());
-        double monthlySales = 0, monthlyProfit = 0;
+        String currentMonth = new SimpleDateFormat("MM/yyyy", Locale.US).format(new Date());
+        double monthlyProfit = 0;
         Cursor cSales = dbHelper.getMonthlySalesRecords("%" + currentMonth);
         if (cSales != null) {
             while (cSales.moveToNext()) { 
-                monthlySales += cSales.getDouble(8); 
                 monthlyProfit += cSales.getDouble(9); 
             }
             cSales.close();
@@ -250,7 +256,7 @@ public class HomeFragment extends Fragment {
         entries.add(new PieEntry((float) monthlyExp, "Expenses"));
 
         PieDataSet dataSet = new PieDataSet(entries, "");
-        dataSet.setColors(new int[]{Color.parseColor("#2E7D32"), Color.parseColor("#C62828")});
+        dataSet.setColors(Color.parseColor("#2E7D32"), Color.parseColor("#C62828"));
         dataSet.setValueTextSize(12f);
         dataSet.setValueTextColor(Color.WHITE);
 
@@ -263,20 +269,23 @@ public class HomeFragment extends Fragment {
     }
 
     private void showExpenseDialog() {
-        LinearLayout layout = new LinearLayout(getContext()); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(50, 40, 50, 10);
-        final EditText ed = new EditText(getContext()); ed.setHint("Description"); layout.addView(ed);
-        final EditText ea = new EditText(getContext()); ea.setHint("Amount"); ea.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL); layout.addView(ea);
+        LinearLayout layout = new LinearLayout(requireContext()); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(50, 40, 50, 10);
+        final EditText ed = new EditText(requireContext()); ed.setHint("Description"); layout.addView(ed);
+        final EditText ea = new EditText(requireContext()); ea.setHint("Amount"); ea.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL); layout.addView(ea);
         String[] cats = {"Rent", "Electricity", "Water", "Salary", "Transport", "Stock", "Other"};
-        final Spinner sp = new Spinner(getContext()); sp.setAdapter(new ArrayAdapter<>(getContext(), android.R.layout.simple_spinner_dropdown_item, cats)); layout.addView(sp);
-        new AlertDialog.Builder(getContext()).setTitle("New Expense").setView(layout).setPositiveButton("Save", (dialog, which) -> {
+        final Spinner sp = new Spinner(requireContext()); sp.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, cats)); layout.addView(sp);
+        new AlertDialog.Builder(requireContext()).setTitle("New Expense").setView(layout).setPositiveButton("Save", (dialog, which) -> {
             try {
-                if (dbHelper.insertExpense(new SimpleDateFormat("dd/MM/yyyy").format(new Date()), ed.getText().toString(), Double.parseDouble(ea.getText().toString()), sp.getSelectedItem().toString())) {
+                if (dbHelper.insertExpense(new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(new Date()), ed.getText().toString(), Double.parseDouble(ea.getText().toString()), sp.getSelectedItem().toString())) {
                     MainActivity activity = (MainActivity) getActivity();
-                    if (activity != null && NetworkHelper.isOnline(getContext())) activity.syncOfflineData();
-                    Toast.makeText(getContext(), "Expense Recorded", Toast.LENGTH_SHORT).show(); 
+                    if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
+                    Toast.makeText(requireContext(), "Expense Recorded", Toast.LENGTH_SHORT).show(); 
                     loadDashboardData();
                 }
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                android.util.Log.e("HomeFragment", "Error saving expense: " + e.getMessage());
+                Toast.makeText(requireContext(), "Failed to save expense", Toast.LENGTH_SHORT).show();
+            }
         }).setNegativeButton("Cancel", null).show();
     }
 

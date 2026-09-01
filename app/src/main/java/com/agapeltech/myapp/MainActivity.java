@@ -16,7 +16,7 @@ import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.Nullable;
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
@@ -25,7 +25,6 @@ import androidx.fragment.app.FragmentTransaction;
 
 import org.json.JSONObject;
 
-import java.util.ArrayList;
 import java.util.Iterator;
 
 public class MainActivity extends AppCompatActivity {
@@ -35,7 +34,6 @@ public class MainActivity extends AppCompatActivity {
     private LinearLayout navHome, navProducts, navSales, navReports, navMore;
 
     private DBHelper dbHelper;
-    private String currentUsername = "";
     
     private TextView activeScannerTarget;
 
@@ -64,7 +62,7 @@ public class MainActivity extends AppCompatActivity {
     );
 
     public static String formatMoney(double amount) {
-        return String.format("%,.0f", amount);
+        return String.format(java.util.Locale.US, "%,.0f", amount);
     }
 
     @Override
@@ -73,9 +71,9 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         SharedPreferences prefs = getSharedPreferences("user_session", MODE_PRIVATE);
-        currentUsername = prefs.getString("username", null);
+        String username = prefs.getString("username", null);
 
-        if (currentUsername == null) {
+        if (username == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;
@@ -159,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
             if (connectivityManager != null) {
                 connectivityManager.registerDefaultNetworkCallback(new ConnectivityManager.NetworkCallback() {
                     @Override
-                    public void onAvailable(Network network) {
+                    public void onAvailable(@NonNull Network network) {
                         runOnUiThread(() -> {
                             syncOfflineData();
                             loadFromFirebase();
@@ -225,7 +223,9 @@ public class MainActivity extends AppCompatActivity {
                     json.put("qty", qty); json.put("cat", cat); json.put("threshold", mCur.getInt(7));
                     if (key != null) FirebaseHelper.updateRecord("/materials/" + key, json, () -> runOnUiThread(() -> dbHelper.markAsSynced(id)));
                     else FirebaseHelper.createRecord("/materials", json, k -> { dbHelper.updateFirebaseKey(name, k); runOnUiThread(() -> dbHelper.markAsSynced(id)); });
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                    android.util.Log.e("MainActivity", "Sync Error: " + e.getMessage());
+                }
             }
             if(mCur != null) mCur.close();
 
@@ -250,7 +250,9 @@ public class MainActivity extends AppCompatActivity {
                     sObj.put("time", sCur.getString(14));
                     if (key != null) FirebaseHelper.updateRecord("/sales/" + key, sObj, () -> dbHelper.markSaleAsSynced(id));
                     else FirebaseHelper.saveSale(sObj, k -> { dbHelper.updateSaleFirebaseKey(id, k); dbHelper.markSaleAsSynced(id); });
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                    android.util.Log.e("MainActivity", "Sales Sync Error: " + e.getMessage());
+                }
             }
             if(sCur != null) sCur.close();
 
@@ -271,7 +273,9 @@ public class MainActivity extends AppCompatActivity {
                     eObj.put("amount", eCur.getDouble(3)); eObj.put("cat", eCur.getString(4));
                     if (key != null) FirebaseHelper.updateRecord("/expenses/" + key, eObj, () -> dbHelper.markExpenseAsSynced(id));
                     else FirebaseHelper.saveExpense(eObj, k -> { dbHelper.updateExpenseFirebaseKey(id, k); dbHelper.markExpenseAsSynced(id); });
-                } catch (Exception e) {}
+                } catch (Exception e) {
+                    android.util.Log.e("MainActivity", "Expenses Sync Error: " + e.getMessage());
+                }
             }
             if(eCur != null) eCur.close();
         }).start();
@@ -291,7 +295,9 @@ public class MainActivity extends AppCompatActivity {
                     Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                     if (current instanceof InventoryFragment) ((InventoryFragment) current).loadFromSQLite();
                 });
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                android.util.Log.e("MainActivity", "Materials FB Load Error: " + e.getMessage());
+            }
         });
 
         FirebaseHelper.fetchAllData("/sales", jsonData -> {
@@ -307,7 +313,9 @@ public class MainActivity extends AppCompatActivity {
                     if (current instanceof ReportsFragment) ((ReportsFragment) current).loadSalesHistoryFromSQLite();
                     if (current instanceof HomeFragment) ((HomeFragment) current).loadDashboardData();
                 });
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                android.util.Log.e("MainActivity", "Sales FB Load Error: " + e.getMessage());
+            }
         });
 
         FirebaseHelper.fetchAllData("/expenses", jsonData -> {
@@ -322,7 +330,9 @@ public class MainActivity extends AppCompatActivity {
                     Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
                     if (current instanceof HomeFragment) ((HomeFragment) current).loadDashboardData();
                 });
-            } catch (Exception e) {}
+            } catch (Exception e) {
+                android.util.Log.e("MainActivity", "Expenses FB Load Error: " + e.getMessage());
+            }
         });
     }
 }

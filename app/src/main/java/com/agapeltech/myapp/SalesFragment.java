@@ -41,8 +41,8 @@ public class SalesFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_sales, container, false);
 
-        dbHelper = new DBHelper(getContext());
-        currentUserRole = getContext().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE).getString("role", "STAFF");
+        dbHelper = new DBHelper(requireContext());
+        currentUserRole = requireContext().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE).getString("role", "STAFF");
 
         initViews(view);
         setupSalesLogicEngine();
@@ -105,8 +105,8 @@ public class SalesFragment extends Fragment {
             double balance = expAmt - paid;
             double actProfit = expProfit - balance;
 
-            txtLiveProfit.setText("UGX " + MainActivity.formatMoney(actProfit));
-            txtLiveBalance.setText("UGX " + MainActivity.formatMoney(balance));
+            txtLiveProfit.setText(String.format(Locale.US, "UGX %s", MainActivity.formatMoney(actProfit)));
+            txtLiveBalance.setText(String.format(Locale.US, "UGX %s", MainActivity.formatMoney(balance)));
         } catch (Exception e) {
             txtLiveProfit.setText("UGX 0");
             txtLiveBalance.setText("UGX 0");
@@ -122,7 +122,7 @@ public class SalesFragment extends Fragment {
             }
             cursor.close();
         }
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(getContext(), android.R.layout.simple_dropdown_item_1line, inventoryProductList);
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, inventoryProductList);
         saleParticulars.setAdapter(adapter);
     }
 
@@ -150,8 +150,8 @@ public class SalesFragment extends Fragment {
             if (dbHelper.insertSaleLog(date, p, q, bp, sp, expAmt, expProfit, paid, actProfit, bal, tag, cust.isEmpty() ? "Walk-in" : cust, ph, time)) {
                 dbHelper.reduceStock(p, q);
                 MainActivity activity = (MainActivity) getActivity();
-                if (activity != null && NetworkHelper.isOnline(getContext())) activity.syncOfflineData();
-                Toast.makeText(getContext(), "Sale Logged Successfully", Toast.LENGTH_SHORT).show();
+                if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
+                Toast.makeText(requireContext(), "Sale Logged Successfully", Toast.LENGTH_SHORT).show();
                 clearSaleInputs();
             }
         } catch (Exception e) { Toast.makeText(getContext(), "Sale Save Error", Toast.LENGTH_SHORT).show(); }

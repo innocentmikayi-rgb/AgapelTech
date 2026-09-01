@@ -7,22 +7,46 @@
     android:padding="12dp">
 
     <LinearLayout
+        android:id="@+id/headerAdminArea"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/md_primary"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:clickable="true"
+        android:focusable="true"
+        android:visibility="gone"
+        android:layout_marginBottom="4dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="ADMIN: ADD / EDIT PRODUCT"
+            android:textStyle="bold"
+            android:textColor="@color/white"/>
+
+        <ImageView
+            android:id="@+id/imgArrowInventory"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@android:drawable/arrow_down_float"
+            android:contentDescription="Toggle Form"
+            app:tint="@color/white"/>
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/adminInputArea"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:visibility="gone"
-        android:background="?attr/colorSurfaceVariant"
-        android:padding="12dp"
-        android:layout_marginBottom="12dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/admin_add_edit_product"
-            android:textStyle="bold"
-            android:textColor="?attr/colorPrimary"
-            android:layout_marginBottom="8dp"/>
+        android:background="@drawable/search_bg"
+        android:backgroundTint="#FFFFFF"
+        android:padding="16dp"
+        android:elevation="4dp"
+        android:layout_marginBottom="16dp">
 
         <LinearLayout
             android:layout_width="match_parent"
