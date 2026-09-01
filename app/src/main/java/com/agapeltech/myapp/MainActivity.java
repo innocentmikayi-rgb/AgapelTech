@@ -77,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
 
     TextView txtReportTotalSales, txtReportTotalProfit, txtReportTotalCredit;
     
-    TextView txtDashNetProfit, txtDashGrossSales, txtDashExpenses, txtDashDebt, txtWeeklyGrowth, txtDashLowStockBadge;
+    TextView txtDashNetProfit, txtDashGrossSales, txtDashExpenses, txtDashDebt, txtWeeklyGrowth, txtDashLowStockBadge, txtDashboardGreeting, txtDashboardInventoryCount;
     TextView txtComparisonTitle, txtComparisonValue, txtGraphTitle;
     LineChart salesLineChart;
     PieChart profitPieChart;
@@ -206,6 +206,8 @@ public class MainActivity extends AppCompatActivity {
         txtDashExpenses = findViewById(R.id.txtDashExpenses);
         txtDashDebt = findViewById(R.id.txtDashDebt);
         txtDashLowStockBadge = findViewById(R.id.txtDashLowStockBadge);
+        txtDashboardGreeting = findViewById(R.id.txtDashboardGreeting);
+        txtDashboardInventoryCount = findViewById(R.id.txtDashboardInventoryCount);
         txtWeeklyGrowth = findViewById(R.id.txtWeeklyGrowth);
         txtComparisonTitle = findViewById(R.id.txtComparisonTitle);
         txtComparisonValue = findViewById(R.id.txtComparisonValue);
@@ -379,6 +381,20 @@ public class MainActivity extends AppCompatActivity {
         txtDashGrossSales.setText("UGX " + formatMoney(monthlySales));
         txtDashExpenses.setText("UGX " + formatMoney(monthlyExp));
         txtDashNetProfit.setText("UGX " + formatMoney(monthlyProfit - monthlyExp));
+        
+        // v1.0.3 New Features
+        if (txtDashboardGreeting != null) {
+            txtDashboardGreeting.setText("Welcome, " + currentUsername + "!");
+        }
+        
+        int totalProducts = 0;
+        Cursor totalCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials", null);
+        if(totalCur.moveToFirst()) totalProducts = totalCur.getInt(0);
+        totalCur.close();
+        
+        if (txtDashboardInventoryCount != null) {
+            txtDashboardInventoryCount.setText(totalProducts + " Products in Inventory");
+        }
         
         // Update Low Stock Badge
         int lowStockCount = 0;

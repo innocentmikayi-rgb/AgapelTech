@@ -184,6 +184,25 @@
             android:contentDescription="@string/logo_description"/>
 
         <TextView
+            android:id="@+id/txtDashboardGreeting"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="Welcome!"
+            android:textSize="18sp"
+            android:textColor="#555555" />
+
+        <TextView
+            android:id="@+id/txtDashboardInventoryCount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:text="0 Products in Stock"
+            android:textSize="12sp"
+            android:textColor="#888888"
+            android:layout_marginBottom="8dp"/>
+
+        <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
