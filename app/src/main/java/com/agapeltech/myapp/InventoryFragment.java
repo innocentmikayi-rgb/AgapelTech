@@ -2,6 +2,7 @@ package com.agapeltech.myapp;
 
 import android.app.AlertDialog;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.text.Editable;
@@ -43,6 +44,7 @@ public class InventoryFragment extends Fragment {
     private ArrayList<HashMap<String, String>> listData = new ArrayList<>();
     private MaterialRecyclerViewAdapter adapter;
     private String currentUserRole = "STAFF";
+    private String currentUsername = "Unknown";
 
     @Nullable
     @Override
@@ -53,7 +55,9 @@ public class InventoryFragment extends Fragment {
         if (ctx == null) ctx = requireContext(); // Fallback but safe check
         
         dbHelper = new DBHelper(ctx);
-        currentUserRole = ctx.getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("role", "STAFF");
+        SharedPreferences prefs = ctx.getSharedPreferences("user_session", Context.MODE_PRIVATE);
+        currentUserRole = prefs.getString("role", "STAFF");
+        currentUsername = prefs.getString("username", "Unknown");
 
         initViews(view, ctx);
         setupListeners();
@@ -102,6 +106,8 @@ public class InventoryFragment extends Fragment {
                 String cat = itemCategory.getSelectedItem().toString();
 
                 dbHelper.insertOrUpdate(name, buy, sell, qty, cat, threshold);
+                dbHelper.logActivity(currentUsername, "ADD/EDIT ITEM", "Name: " + name + ", Qty: " + qty + ", Price: " + sell);
+                
                 MainActivity activity = (MainActivity) getActivity();
                 if (activity != null && getContext() != null && NetworkHelper.isOnline(getContext())) activity.syncOfflineData();
                 if (getContext() != null) Toast.makeText(getContext(), "Product Saved", Toast.LENGTH_SHORT).show();
@@ -201,6 +207,20 @@ public class InventoryFragment extends Fragment {
         Context ctx = getContext();
         if (ctx == null) return;
         
+        if (!"MANAGER".equals(currentUserRole)) {
+            // View only for staff
+            HashMap<String, String> item = sourceList.get(position);
+            new AlertDialog.Builder(ctx)
+                .setTitle(item.get("name"))
+                .setMessage("Category: " + item.get("category") + "\n" +
+                           item.get("buy") + "\n" +
+                           item.get("sell") + "\n" +
+                           "Stock: " + item.get("qty_raw"))
+                .setPositiveButton("Close", null)
+                .show();
+            return;
+        }
+
         String[] options = {"Edit Item", "Delete Item"};
         new AlertDialog.Builder(ctx).setTitle("Manage Item").setItems(options, (dialog, which) -> {
             String name = sourceList.get(position).get("name");
@@ -229,12 +249,14 @@ public class InventoryFragment extends Fragment {
 
                 new AlertDialog.Builder(ctx).setTitle("Edit Item: " + name).setView(layout).setPositiveButton("Update", (d, w) -> {
                     dbHelper.insertOrUpdate(name, Double.parseDouble(b.getText().toString()), Double.parseDouble(s.getText().toString()), Integer.parseInt(q.getText().toString()), cSpin.getSelectedItem().toString(), Integer.parseInt(t.getText().toString()));
+                    dbHelper.logActivity(currentUsername, "UPDATE ITEM", "Name: " + name + ", New Qty: " + q.getText().toString());
                     MainActivity activity = (MainActivity) getActivity();
                     if (activity != null && NetworkHelper.isOnline(ctx)) activity.syncOfflineData();
                     loadFromSQLite();
                 }).show();
             } else { 
                 dbHelper.markForDeletion(name); 
+                dbHelper.logActivity(currentUsername, "DELETE ITEM", "Name: " + name);
                 MainActivity activity = (MainActivity) getActivity();
                 if (activity != null && NetworkHelper.isOnline(ctx)) activity.syncOfflineData(); 
                 loadFromSQLite(); 

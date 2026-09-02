@@ -1,5 +1,6 @@
 package com.agapeltech.myapp;
 
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
 import android.text.Editable;
@@ -35,6 +36,7 @@ public class SalesFragment extends Fragment {
     private DBHelper dbHelper;
     private ArrayList<String> inventoryProductList = new ArrayList<>();
     private String currentUserRole = "STAFF";
+    private String currentUsername = "Unknown";
 
     @Nullable
     @Override
@@ -42,7 +44,9 @@ public class SalesFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_sales, container, false);
 
         dbHelper = new DBHelper(requireContext());
-        currentUserRole = requireContext().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE).getString("role", "STAFF");
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE);
+        currentUserRole = prefs.getString("role", "STAFF");
+        currentUsername = prefs.getString("username", "Unknown");
 
         initViews(view);
         setupSalesLogicEngine();
@@ -149,6 +153,8 @@ public class SalesFragment extends Fragment {
 
             if (dbHelper.insertSaleLog(date, p, q, bp, sp, expAmt, expProfit, paid, actProfit, bal, tag, cust.isEmpty() ? "Walk-in" : cust, ph, time)) {
                 dbHelper.reduceStock(p, q);
+                dbHelper.logActivity(currentUsername, "NEW SALE", "Item: " + p + ", Qty: " + q + ", Total: " + paid);
+                
                 MainActivity activity = (MainActivity) getActivity();
                 if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
                 Toast.makeText(requireContext(), "Sale Logged Successfully", Toast.LENGTH_SHORT).show();

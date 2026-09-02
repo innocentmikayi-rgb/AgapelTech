@@ -53,6 +53,8 @@ public class ReportsFragment extends Fragment {
 
     private DBHelper dbHelper;
     private ArrayList<HashMap<String, String>> salesListData = new ArrayList<>();
+    private String currentUserRole = "STAFF";
+    private String currentUsername = "Unknown";
 
     @Nullable
     @Override
@@ -60,6 +62,9 @@ public class ReportsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_reports, container, false);
 
         dbHelper = new DBHelper(requireContext());
+        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE);
+        currentUserRole = prefs.getString("role", "STAFF");
+        currentUsername = prefs.getString("username", "Unknown");
 
         initViews(view);
         setupListeners();
@@ -151,12 +156,22 @@ public class ReportsFragment extends Fragment {
 
         SalesRecyclerViewAdapter salesAdapter = new SalesRecyclerViewAdapter(requireContext(), salesListData, position -> {
             HashMap<String, String> sale = salesListData.get(position);
-            String[] options = {"Share Receipt", "Settle Credit", "Edit Record", "Delete Record"};
+            
+            java.util.ArrayList<String> optionsList = new java.util.ArrayList<>();
+            optionsList.add("Share Receipt");
+            optionsList.add("Settle Credit");
+            optionsList.add("Edit Record");
+            if ("MANAGER".equals(currentUserRole)) {
+                optionsList.add("Delete Record");
+            }
+            final String[] options = optionsList.toArray(new String[0]);
+
             new AlertDialog.Builder(requireContext()).setTitle("Manage Sale").setItems(options, (dialog, which) -> {
-                if (which == 0) shareReceipt(sale);
-                else if (which == 1) showSettleDialog(sale.get("id"));
-                else if (which == 2) showEditSaleDialog(sale);
-                else if (which == 3) confirmDeleteSale(sale.get("id"));
+                String choice = options[which];
+                if ("Share Receipt".equals(choice)) shareReceipt(sale);
+                else if ("Settle Credit".equals(choice)) showSettleDialog(sale.get("id"));
+                else if ("Edit Record".equals(choice)) showEditSaleDialog(sale);
+                else if ("Delete Record".equals(choice)) confirmDeleteSale(sale.get("id"));
             }).show();
         });
         recyclerViewSales.setAdapter(salesAdapter);
@@ -331,6 +346,7 @@ public class ReportsFragment extends Fragment {
         final EditText input = new EditText(requireContext()); input.setHint("Amount Paid"); input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
         new AlertDialog.Builder(requireContext()).setTitle("Settle Credit").setView(input).setPositiveButton("Confirm", (dialog, which) -> {
             dbHelper.getWritableDatabase().execSQL("UPDATE sales_table SET actual_amount = actual_amount + " + input.getText().toString() + ", balance = balance - " + input.getText().toString() + ", synced = 0 WHERE id = " + rid);
+            dbHelper.logActivity(currentUsername, "SETTLE CREDIT", "Sale ID: " + rid + ", Amount: " + input.getText().toString());
             MainActivity activity = (MainActivity) getActivity();
             if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
             loadSalesHistoryFromSQLite();
@@ -356,6 +372,7 @@ public class ReportsFragment extends Fragment {
                 if (c.moveToFirst()) {
                     double bp = c.getDouble(0), expAmt = q * s, expProf = (s - bp) * q, bal = expAmt - paid;
                     dbHelper.updateSaleRecord(id, p, q, bp, s, expAmt, expProf, paid, expProf - bal, bal, "Updated");
+                    dbHelper.logActivity(currentUsername, "UPDATE SALE", "Sale ID: " + id + ", Item: " + p);
                     MainActivity activity = (MainActivity) getActivity();
                     if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
                     loadSalesHistoryFromSQLite();
@@ -372,6 +389,7 @@ public class ReportsFragment extends Fragment {
         new AlertDialog.Builder(requireContext()).setTitle("Delete Record").setMessage("Permanently delete this sale record?")
             .setPositiveButton("Delete", (dialog, which) -> {
                 dbHelper.markSaleForDeletion(Integer.parseInt(rid));
+                dbHelper.logActivity(currentUsername, "DELETE SALE", "Sale ID: " + rid);
                 MainActivity activity = (MainActivity) getActivity();
                 if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
                 loadSalesHistoryFromSQLite();

@@ -66,7 +66,7 @@ public class HomeFragment extends Fragment {
         currentUsername = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("username", "");
 
         initViews(view);
-        setupListeners();
+        setupListeners(view);
         loadDashboardData();
 
         return view;
@@ -93,13 +93,13 @@ public class HomeFragment extends Fragment {
         txtLowStockItems = v.findViewById(R.id.txtLowStockItems);
     }
 
-    private void setupListeners() {
-        btnQuickExpense.setOnClickListener(v -> showExpenseDialog());
-        btnQuickDebt.setOnClickListener(v -> showDebtorsDialog());
+    private void setupListeners(View v) {
+        btnQuickExpense.setOnClickListener(view -> showExpenseDialog());
+        btnQuickDebt.setOnClickListener(view -> showDebtorsDialog());
         
-        View btnAnalytics = getView() != null ? getView().findViewById(R.id.btnViewAdvancedAnalytics) : null;
+        Button btnAnalytics = v.findViewById(R.id.btnViewAdvancedAnalytics);
         if (btnAnalytics != null) {
-            btnAnalytics.setOnClickListener(v -> {
+            btnAnalytics.setOnClickListener(view -> {
                 MainActivity activity = (MainActivity) getActivity();
                 if (activity != null) {
                     activity.replaceFragment(new AnalyticsFragment(), null);
@@ -287,7 +287,13 @@ public class HomeFragment extends Fragment {
         final Spinner sp = new Spinner(requireContext()); sp.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, cats)); layout.addView(sp);
         new AlertDialog.Builder(requireContext()).setTitle("New Expense").setView(layout).setPositiveButton("Save", (dialog, which) -> {
             try {
-                if (dbHelper.insertExpense(new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(new Date()), ed.getText().toString(), Double.parseDouble(ea.getText().toString()), sp.getSelectedItem().toString())) {
+                String date = new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(new Date());
+                String desc = ed.getText().toString();
+                double amount = Double.parseDouble(ea.getText().toString());
+                String category = sp.getSelectedItem().toString();
+
+                if (dbHelper.insertExpense(date, desc, amount, category)) {
+                    dbHelper.logActivity(currentUsername, "NEW EXPENSE", "Desc: " + desc + ", Amt: " + amount);
                     MainActivity activity = (MainActivity) getActivity();
                     if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
                     Toast.makeText(requireContext(), "Expense Recorded", Toast.LENGTH_SHORT).show(); 

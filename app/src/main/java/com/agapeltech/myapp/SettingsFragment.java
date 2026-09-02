@@ -34,9 +34,10 @@ import java.util.Objects;
 
 public class SettingsFragment extends Fragment {
 
-    private Button adminLoginBtn, btnManageExpenses, btnSwitchTheme, btnCheckUpdate, btnManageUsers;
+    private Button adminLoginBtn, btnManageExpenses, btnSwitchTheme, btnCheckUpdate, btnManageUsers, btnViewActivities;
     private DBHelper dbHelper;
     private String currentUserRole = "STAFF";
+    private String currentUsername = "Unknown";
 
     @Nullable
     @Override
@@ -47,7 +48,9 @@ public class SettingsFragment extends Fragment {
         if (ctx == null) ctx = requireContext();
 
         dbHelper = new DBHelper(ctx);
-        currentUserRole = ctx.getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("role", "STAFF");
+        SharedPreferences prefs = ctx.getSharedPreferences("user_session", Context.MODE_PRIVATE);
+        currentUserRole = prefs.getString("role", "STAFF");
+        currentUsername = prefs.getString("username", "Unknown");
 
         initViews(view);
         setupListeners();
@@ -63,6 +66,7 @@ public class SettingsFragment extends Fragment {
         btnSwitchTheme = v.findViewById(R.id.btnSwitchTheme);
         btnCheckUpdate = v.findViewById(R.id.btnCheckUpdate);
         btnManageUsers = v.findViewById(R.id.btnManageUsers);
+        btnViewActivities = v.findViewById(R.id.btnViewActivities);
 
         adminLoginBtn.setText("LOGOUT");
     }
@@ -78,11 +82,18 @@ public class SettingsFragment extends Fragment {
                 activity.replaceFragment(new UserManagementFragment(), null);
             }
         });
+        btnViewActivities.setOnClickListener(v -> {
+            MainActivity activity = (MainActivity) getActivity();
+            if (activity != null) {
+                activity.replaceFragment(new ActivityLogFragment(), null);
+            }
+        });
     }
 
     private void applyRoleRestrictions() {
         if ("MANAGER".equals(currentUserRole)) {
             btnManageUsers.setVisibility(View.VISIBLE);
+            btnViewActivities.setVisibility(View.VISIBLE);
         }
     }
 
@@ -214,14 +225,27 @@ public class SettingsFragment extends Fragment {
 
         AlertDialog dialog = new AlertDialog.Builder(requireContext()).setTitle("Expense Records").setView(eList).setPositiveButton("Close", null).create();
         eList.setOnItemClickListener((parent, view, position, id) -> {
-            if (!"MANAGER".equals(currentUserRole)) return;
+            if (!"MANAGER".equals(currentUserRole)) {
+                HashMap<String, String> exp = eData.get(position);
+                new AlertDialog.Builder(requireContext())
+                    .setTitle(exp.get("desc"))
+                    .setMessage("Date: " + exp.get("date") + "\n" +
+                               "Amount: UGX " + exp.get("amt") + "\n" +
+                               "Category: " + exp.get("cat"))
+                    .setPositiveButton("Close", null)
+                    .show();
+                return;
+            }
             HashMap<String, String> exp = eData.get(position);
             String[] options = {"Edit Expense", "Delete Expense"};
             new AlertDialog.Builder(requireContext()).setTitle("Manage Expense").setItems(options, (d, which) -> {
                 if (which == 0) showEditExpenseDialog(exp, dialog);
                 else {
                     String expId = exp.get("id");
-                    if (expId != null) dbHelper.markExpenseForDeletion(Integer.parseInt(expId));
+                    if (expId != null) {
+                        dbHelper.markExpenseForDeletion(Integer.parseInt(expId));
+                        dbHelper.logActivity(currentUsername, "DELETE EXPENSE", "Desc: " + exp.get("desc") + ", Amt: " + exp.get("amt"));
+                    }
                     MainActivity activity = (MainActivity) getActivity();
                     if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
                     dialog.dismiss(); showExpenseRecordsDialog();
@@ -243,7 +267,10 @@ public class SettingsFragment extends Fragment {
         
         new AlertDialog.Builder(requireContext()).setTitle("Edit Expense: " + exp.get("date")).setView(layout).setPositiveButton("Update", (d, w) -> {
             String expId = exp.get("id");
-            if (expId != null) dbHelper.updateExpenseRecord(Integer.parseInt(expId), ed.getText().toString(), Double.parseDouble(ea.getText().toString()), sp.getSelectedItem().toString());
+            if (expId != null) {
+                dbHelper.updateExpenseRecord(Integer.parseInt(expId), ed.getText().toString(), Double.parseDouble(ea.getText().toString()), sp.getSelectedItem().toString());
+                dbHelper.logActivity(currentUsername, "UPDATE EXPENSE", "New Desc: " + ed.getText().toString() + ", New Amt: " + ea.getText().toString());
+            }
             MainActivity activity = (MainActivity) getActivity();
             if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
             parentDialog.dismiss(); showExpenseRecordsDialog();

@@ -43,6 +43,16 @@
         android:layout_marginBottom="16dp" />
 
     <Button
+        android:id="@+id/btnViewActivities"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="VIEW APP ACTIVITIES"
+        android:backgroundTint="#F57C00"
+        android:textColor="#FFFFFF"
+        android:visibility="gone"
+        android:layout_marginBottom="16dp" />
+
+    <Button
         android:id="@+id/btnSwitchTheme"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

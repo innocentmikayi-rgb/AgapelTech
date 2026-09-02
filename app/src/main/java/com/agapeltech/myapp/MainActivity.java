@@ -146,10 +146,14 @@ public class MainActivity extends AppCompatActivity {
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(R.anim.fade_in, R.anim.fade_out);
         fragmentTransaction.replace(R.id.fragment_container, fragment);
-        // commitAllowingStateLoss is safer for UI interactions that might happen 
-        // during state transitions on very fast/modern devices (Android 15+)
+        
+        // If it's a sub-page (no bottom tab mapping), add to backstack
+        if (activeTab == null) {
+            fragmentTransaction.addToBackStack(null);
+        }
+        
         fragmentTransaction.commitAllowingStateLoss();
-        highlightTab(activeTab);
+        if (activeTab != null) highlightTab(activeTab);
     }
 
     private void highlightTab(LinearLayout activeTab) {

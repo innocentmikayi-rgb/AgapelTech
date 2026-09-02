@@ -11,7 +11,7 @@ import java.util.HashMap;
 public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "materialsDB";
-    private static final int DB_VERSION = 9;
+    private static final int DB_VERSION = 10;
 
     public DBHelper(Context context){
         super(context, DB_NAME, null, DB_VERSION);
@@ -71,6 +71,14 @@ public class DBHelper extends SQLiteOpenHelper {
         // Seed default users
         db.execSQL("INSERT OR IGNORE INTO users (username, password, role) VALUES ('admin', '1234', 'MANAGER')");
         db.execSQL("INSERT OR IGNORE INTO users (username, password, role) VALUES ('staff', '0000', 'STAFF')");
+
+        // 5. Activity Logs
+        db.execSQL("CREATE TABLE IF NOT EXISTS activities (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "user_email TEXT, " +
+                "action_type TEXT, " +
+                "details TEXT, " +
+                "timestamp TEXT)");
     }
 
     @Override
@@ -130,6 +138,16 @@ public class DBHelper extends SQLiteOpenHelper {
         if (oldVersion < 9) {
             try {
                 db.execSQL("ALTER TABLE sales_table ADD COLUMN sale_time TEXT");
+            } catch (Exception e) {}
+        }
+        if (oldVersion < 10) {
+            try {
+                db.execSQL("CREATE TABLE IF NOT EXISTS activities (" +
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                        "user_email TEXT, " +
+                        "action_type TEXT, " +
+                        "details TEXT, " +
+                        "timestamp TEXT)");
             } catch (Exception e) {}
         }
     }
@@ -573,5 +591,26 @@ public class DBHelper extends SQLiteOpenHelper {
         cv.put("role", role);
         long result = db.insert("users", null, cv);
         return result != -1;
+    }
+
+    // ================= ACTIVITY LOG METHODS =================
+
+    public void logActivity(String user, String action, String details) {
+        try {
+            SQLiteDatabase db = this.getWritableDatabase();
+            ContentValues cv = new ContentValues();
+            cv.put("user_email", user);
+            cv.put("action_type", action);
+            cv.put("details", details);
+            cv.put("timestamp", new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.US).format(new java.util.Date()));
+            db.insert("activities", null, cv);
+        } catch (Exception e) {
+            Log.e("DBHelper", "Error logging activity: " + e.getMessage());
+        }
+    }
+
+    public Cursor getAllActivities() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT * FROM activities ORDER BY id DESC", null);
     }
 }

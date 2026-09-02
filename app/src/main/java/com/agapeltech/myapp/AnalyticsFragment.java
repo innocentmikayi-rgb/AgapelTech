@@ -36,6 +36,8 @@ public class AnalyticsFragment extends Fragment {
     private HorizontalBarChart topProductsBarChart;
     private LineChart revenueProfitLineChart;
     private TextView txtAvgTicketSize, txtProfitMargin;
+    private View layoutAnalyticsContent;
+    private TextView txtNoData;
     private DBHelper dbHelper;
 
     @Nullable
@@ -46,7 +48,12 @@ public class AnalyticsFragment extends Fragment {
         dbHelper = new DBHelper(requireContext());
         
         initViews(view);
-        loadAnalyticsData();
+        
+        if (checkIfDataExists()) {
+            loadAnalyticsData();
+        } else {
+            showNoDataMessage();
+        }
 
         return view;
     }
@@ -56,6 +63,30 @@ public class AnalyticsFragment extends Fragment {
         revenueProfitLineChart = v.findViewById(R.id.revenueProfitLineChart);
         txtAvgTicketSize = v.findViewById(R.id.txtAvgTicketSize);
         txtProfitMargin = v.findViewById(R.id.txtProfitMargin);
+        layoutAnalyticsContent = v.findViewById(R.id.layoutAnalyticsContent);
+        
+        // Add No Data TextView programmatically if not in layout
+        txtNoData = new TextView(requireContext());
+        txtNoData.setText("No sales data available for analytics yet. Please record some sales first!");
+        txtNoData.setGravity(android.view.Gravity.CENTER);
+        txtNoData.setPadding(64, 100, 64, 100);
+        txtNoData.setVisibility(View.GONE);
+        ((ViewGroup)v).addView(txtNoData, 0);
+    }
+
+    private boolean checkIfDataExists() {
+        Cursor c = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM sales_table WHERE synced != -1", null);
+        boolean exists = false;
+        if (c != null) {
+            if (c.moveToFirst()) exists = c.getInt(0) > 0;
+            c.close();
+        }
+        return exists;
+    }
+
+    private void showNoDataMessage() {
+        if (layoutAnalyticsContent != null) layoutAnalyticsContent.setVisibility(View.GONE);
+        if (txtNoData != null) txtNoData.setVisibility(View.VISIBLE);
     }
 
     private void loadAnalyticsData() {
