@@ -101,8 +101,10 @@ public class MainActivity extends AppCompatActivity {
         setupNetworkCallback();
 
         if (NetworkHelper.isOnline(this)) {
-            syncOfflineData();
-            loadFromFirebase();
+            new android.os.Handler(android.os.Looper.getMainLooper()).postDelayed(() -> {
+                syncOfflineData();
+                loadFromFirebase();
+            }, 1000); // Small delay to prevent UI thread lock on startup
         }
     }
 

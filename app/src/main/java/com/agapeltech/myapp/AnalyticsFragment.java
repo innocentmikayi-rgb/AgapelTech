@@ -90,34 +90,45 @@ public class AnalyticsFragment extends Fragment {
     }
 
     private void loadAnalyticsData() {
-        String currentMonth = new SimpleDateFormat("MM/yyyy", Locale.US).format(new Date());
+        new Thread(() -> {
+            try {
+                String currentMonth = new SimpleDateFormat("MM/yyyy", Locale.US).format(new Date());
 
-        // 1. Top Selling Products
-        setupTopProductsChart();
+                // Fetch data in background thread
+                double avgTicket = dbHelper.getAverageTransactionValue(currentMonth);
+                
+                double totalMonthlyProfit = 0, totalMonthlyRevenue = 0;
+                Cursor c = dbHelper.getMonthlySalesRecords(currentMonth);
+                if (c != null) {
+                    int revIdx = c.getColumnIndex("actual_amount");
+                    int profIdx = c.getColumnIndex("actual_profit");
+                    while (c.moveToNext()) {
+                        if (revIdx != -1) totalMonthlyRevenue += c.getDouble(revIdx);
+                        if (profIdx != -1) totalMonthlyProfit += c.getDouble(profIdx);
+                    }
+                    c.close();
+                }
 
-        // 2. Revenue vs Profit Trend
-        setupTrendChart();
+                final double finalAvg = avgTicket;
+                final double finalRev = totalMonthlyRevenue;
+                final double finalProf = totalMonthlyProfit;
 
-        // 3. KPIs
-        double avgTicket = dbHelper.getAverageTransactionValue(currentMonth);
-        txtAvgTicketSize.setText(String.format(Locale.US, "UGX %s", MainActivity.formatMoney(avgTicket)));
-
-        double totalMonthlyProfit = 0, totalMonthlyRevenue = 0;
-        Cursor c = dbHelper.getMonthlySalesRecords(currentMonth);
-        if (c != null) {
-            int revIdx = c.getColumnIndex("actual_amount");
-            int profIdx = c.getColumnIndex("actual_profit");
-            while (c.moveToNext()) {
-                if (revIdx != -1) totalMonthlyRevenue += c.getDouble(revIdx);
-                if (profIdx != -1) totalMonthlyProfit += c.getDouble(profIdx);
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        txtAvgTicketSize.setText(String.format(Locale.US, "UGX %s", MainActivity.formatMoney(finalAvg)));
+                        if (finalRev > 0) {
+                            double margin = (finalProf / finalRev) * 100;
+                            txtProfitMargin.setText(String.format(Locale.US, "%.1f%%", margin));
+                        }
+                        
+                        setupTopProductsChart();
+                        setupTrendChart();
+                    });
+                }
+            } catch (Exception e) {
+                android.util.Log.e("Analytics", "Error loading analytics: " + e.getMessage());
             }
-            c.close();
-        }
-        
-        if (totalMonthlyRevenue > 0) {
-            double margin = (totalMonthlyProfit / totalMonthlyRevenue) * 100;
-            txtProfitMargin.setText(String.format(Locale.US, "%.1f%%", margin));
-        }
+        }).start();
     }
 
     private void setupTopProductsChart() {

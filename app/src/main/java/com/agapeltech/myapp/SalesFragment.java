@@ -100,10 +100,16 @@ public class SalesFragment extends Fragment {
 
     private void calculateLiveTotals() {
         try {
-            int q = Integer.parseInt(saleQty.getText().toString());
-            double bp = Double.parseDouble(saleBP.getText().toString());
-            double sp = Double.parseDouble(saleSP.getText().toString());
-            double paid = Double.parseDouble(saleActualAmount.getText().toString());
+            String qtyStr = saleQty.getText().toString().trim();
+            String bpStr = saleBP.getText().toString().trim();
+            String spStr = saleSP.getText().toString().trim();
+            String paidStr = saleActualAmount.getText().toString().trim();
+
+            int q = qtyStr.isEmpty() ? 0 : Integer.parseInt(qtyStr);
+            double bp = bpStr.isEmpty() ? 0 : Double.parseDouble(bpStr);
+            double sp = spStr.isEmpty() ? 0 : Double.parseDouble(spStr);
+            double paid = paidStr.isEmpty() ? 0 : Double.parseDouble(paidStr);
+            
             double expAmt = q * sp;
             double expProfit = (sp - bp) * q;
             double balance = expAmt - paid;
