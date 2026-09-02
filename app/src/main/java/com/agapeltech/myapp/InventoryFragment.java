@@ -149,10 +149,10 @@ public class InventoryFragment extends Fragment {
     }
 
     public void loadFromSQLite() {
+        Context ctx = getContext();
+        if (ctx == null) return;
+        
         try {
-            Context ctx = getContext();
-            if (ctx == null) return;
-            
             listData.clear();
             Cursor cursor = dbHelper.getAllData(); 
             if (cursor != null) {

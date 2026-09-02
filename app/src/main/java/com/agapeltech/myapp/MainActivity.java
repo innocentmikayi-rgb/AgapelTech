@@ -45,8 +45,8 @@ public class MainActivity extends AppCompatActivity {
                     if (code != null && activeScannerTarget != null) {
                         activeScannerTarget.setText(code);
                         Fragment currentFragment = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                        if (currentFragment instanceof SalesFragment) {
-                            ((SalesFragment) currentFragment).refreshInventoryAutocompleteData(); 
+                        if (currentFragment instanceof SalesFragment salesFragment) {
+                            salesFragment.refreshInventoryAutocompleteData(); 
                         }
                     }
                 }
@@ -157,7 +157,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void highlightTab(LinearLayout activeTab) {
-        int inactiveColor = ContextCompat.getColor(this, android.R.color.darker_gray);
+        int inactiveColor = android.graphics.Color.parseColor("#616161");
         navHomeText.setTextColor(inactiveColor); navHomeIcon.setColorFilter(inactiveColor);
         navProductsText.setTextColor(inactiveColor); navProductsIcon.setColorFilter(inactiveColor);
         navSalesText.setTextColor(inactiveColor); navSalesIcon.setColorFilter(inactiveColor);

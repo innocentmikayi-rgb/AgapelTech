@@ -44,11 +44,11 @@ public class SettingsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 
-        Context ctx = getContext();
-        if (ctx == null) ctx = requireContext();
+        Context appContext = getContext();
+        if (appContext == null) appContext = requireContext();
 
-        dbHelper = new DBHelper(ctx);
-        SharedPreferences prefs = ctx.getSharedPreferences("user_session", Context.MODE_PRIVATE);
+        dbHelper = new DBHelper(appContext);
+        SharedPreferences prefs = appContext.getSharedPreferences("user_session", Context.MODE_PRIVATE);
         currentUserRole = prefs.getString("role", "STAFF");
         currentUsername = prefs.getString("username", "Unknown");
 

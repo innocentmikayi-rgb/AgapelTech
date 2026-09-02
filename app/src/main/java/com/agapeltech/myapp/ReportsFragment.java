@@ -444,6 +444,8 @@ public class ReportsFragment extends Fragment {
         } catch (IOException e) { 
             android.util.Log.e("ReportsFragment", "PDF Generation Error: " + e.getMessage());
             Toast.makeText(requireContext(), "PDF Error", Toast.LENGTH_SHORT).show(); 
+        } catch (Exception e) {
+            android.util.Log.e("ReportsFragment", "Unexpected Error: " + e.getMessage());
         }
     }
 
