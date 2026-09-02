@@ -67,6 +67,12 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Global Crash Handler for better stability
+        Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
+            android.util.Log.e("CRASH", "Uncaught Exception: ", throwable);
+            // Optionally restart app or show a custom error screen
+        });
+
         applyTheme();
         super.onCreate(savedInstanceState);
 
@@ -115,6 +121,11 @@ public class MainActivity extends AppCompatActivity {
         navSalesIcon = findViewById(R.id.nav_sales_icon);
         navReportsIcon = findViewById(R.id.nav_reports_icon);
         navMoreIcon = findViewById(R.id.nav_more_icon);
+        
+        // Safety check
+        if (navHome == null || navHomeText == null || navHomeIcon == null) {
+            android.util.Log.e("MainActivity", "Navigation views not found! Check your layout.");
+        }
     }
 
     private void setupBottomNavigation() {
@@ -221,8 +232,13 @@ public class MainActivity extends AppCompatActivity {
                     JSONObject json = new JSONObject(); 
                     json.put("name", name); json.put("buy", buy); json.put("sell", sell); 
                     json.put("qty", qty); json.put("cat", cat); json.put("threshold", mCur.getInt(7));
-                    if (key != null) FirebaseHelper.updateRecord("/materials/" + key, json, () -> runOnUiThread(() -> dbHelper.markAsSynced(id)));
-                    else FirebaseHelper.createRecord("/materials", json, k -> { dbHelper.updateFirebaseKey(name, k); runOnUiThread(() -> dbHelper.markAsSynced(id)); });
+                    if (key != null) FirebaseHelper.updateRecord("/materials/" + key, json, () -> {
+                        if (!isFinishing()) runOnUiThread(() -> dbHelper.markAsSynced(id));
+                    });
+                    else FirebaseHelper.createRecord("/materials", json, k -> { 
+                        dbHelper.updateFirebaseKey(name, k); 
+                        if (!isFinishing()) runOnUiThread(() -> dbHelper.markAsSynced(id)); 
+                    });
                 } catch (Exception e) {
                     android.util.Log.e("MainActivity", "Sync Error: " + e.getMessage());
                 }
@@ -291,10 +307,12 @@ public class MainActivity extends AppCompatActivity {
                     dbHelper.insertOrUpdate(obj.getString("name"), obj.getDouble("buy"), obj.getDouble("sell"), obj.optInt("qty", 0), obj.optString("cat", "General"), obj.optInt("threshold", 5));
                     dbHelper.updateFirebaseKey(obj.getString("name"), key);
                 }
-                runOnUiThread(() -> {
-                    Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                    if (current instanceof InventoryFragment) ((InventoryFragment) current).loadFromSQLite();
-                });
+                if (!isFinishing()) {
+                    runOnUiThread(() -> {
+                        Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                        if (current instanceof InventoryFragment) ((InventoryFragment) current).loadFromSQLite();
+                    });
+                }
             } catch (Exception e) {
                 android.util.Log.e("MainActivity", "Materials FB Load Error: " + e.getMessage());
             }
@@ -308,11 +326,13 @@ public class MainActivity extends AppCompatActivity {
                     String key = keys.next(); JSONObject obj = json.getJSONObject(key);
                     dbHelper.upsertSaleFromFirebase(key, obj.getString("date"), obj.getString("item"), obj.getInt("qty"), obj.getDouble("bp"), obj.getDouble("sp"), obj.getDouble("paid"), obj.optString("customer", "Walk-in"), obj.optString("phone", ""), obj.optString("time", ""));
                 }
-                runOnUiThread(() -> {
-                    Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                    if (current instanceof ReportsFragment) ((ReportsFragment) current).loadSalesHistoryFromSQLite();
-                    if (current instanceof HomeFragment) ((HomeFragment) current).loadDashboardData();
-                });
+                if (!isFinishing()) {
+                    runOnUiThread(() -> {
+                        Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                        if (current instanceof ReportsFragment) ((ReportsFragment) current).loadSalesHistoryFromSQLite();
+                        if (current instanceof HomeFragment) ((HomeFragment) current).loadDashboardData();
+                    });
+                }
             } catch (Exception e) {
                 android.util.Log.e("MainActivity", "Sales FB Load Error: " + e.getMessage());
             }
@@ -326,10 +346,12 @@ public class MainActivity extends AppCompatActivity {
                     String key = keys.next(); JSONObject obj = json.getJSONObject(key);
                     dbHelper.upsertExpenseFromFirebase(key, obj.getString("date"), obj.getString("desc"), obj.getDouble("amount"), obj.getString("cat"));
                 }
-                runOnUiThread(() -> {
-                    Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
-                    if (current instanceof HomeFragment) ((HomeFragment) current).loadDashboardData();
-                });
+                if (!isFinishing()) {
+                    runOnUiThread(() -> {
+                        Fragment current = getSupportFragmentManager().findFragmentById(R.id.fragment_container);
+                        if (current instanceof HomeFragment) ((HomeFragment) current).loadDashboardData();
+                    });
+                }
             } catch (Exception e) {
                 android.util.Log.e("MainActivity", "Expenses FB Load Error: " + e.getMessage());
             }

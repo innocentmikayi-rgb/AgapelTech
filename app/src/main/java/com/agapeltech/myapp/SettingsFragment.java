@@ -43,8 +43,11 @@ public class SettingsFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_settings, container, false);
 
-        dbHelper = new DBHelper(requireContext());
-        currentUserRole = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("role", "STAFF");
+        Context ctx = getContext();
+        if (ctx == null) ctx = requireContext();
+
+        dbHelper = new DBHelper(ctx);
+        currentUserRole = ctx.getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("role", "STAFF");
 
         initViews(view);
         setupListeners();
@@ -103,6 +106,8 @@ public class SettingsFragment extends Fragment {
 
     private void checkForUpdates() {
         String githubApiUrl = "https://api.github.com/repos/innocentmikayi-rgb/AgapelTech/releases/latest";
+        final Context appContext = getContext();
+        if (appContext == null) return;
 
         new Thread(() -> {
             try {
@@ -123,18 +128,26 @@ public class SettingsFragment extends Fragment {
                     String latestVersion = json.getString("tag_name");
                     String downloadUrl = json.getString("html_url");
 
-                    String currentVersion = "v" + requireContext().getPackageManager().getPackageInfo(requireContext().getPackageName(), 0).versionName;
+                    String currentVersion = "v" + appContext.getPackageManager().getPackageInfo(appContext.getPackageName(), 0).versionName;
 
                     if (!Objects.equals(latestVersion, currentVersion)) {
-                        if (getActivity() != null) getActivity().runOnUiThread(() -> showUpdateDialog(latestVersion, downloadUrl));
+                        if (getActivity() != null && !getActivity().isFinishing()) {
+                            getActivity().runOnUiThread(() -> showUpdateDialog(latestVersion, downloadUrl));
+                        }
                     } else {
-                        if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "You are on the latest version!", Toast.LENGTH_SHORT).show());
+                        if (getActivity() != null && !getActivity().isFinishing()) {
+                            getActivity().runOnUiThread(() -> Toast.makeText(appContext, "You are on the latest version!", Toast.LENGTH_SHORT).show());
+                        }
                     }
                 } else {
-                    if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Update check failed (Code: " + responseCode + ")", Toast.LENGTH_SHORT).show());
+                    if (getActivity() != null && !getActivity().isFinishing()) {
+                        getActivity().runOnUiThread(() -> Toast.makeText(appContext, "Update check failed (Code: " + responseCode + ")", Toast.LENGTH_SHORT).show());
+                    }
                 }
             } catch (Exception e) {
-                if (getActivity() != null) getActivity().runOnUiThread(() -> Toast.makeText(getContext(), "Update Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                if (getActivity() != null && !getActivity().isFinishing()) {
+                    getActivity().runOnUiThread(() -> Toast.makeText(appContext, "Update Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
+                }
             }
         }).start();
     }

@@ -9,6 +9,9 @@ android {
         targetSdkVersion 35
         versionCode 4
         versionName "1.0.3"
+        
+        multiDexEnabled true
+        vectorDrawables.useSupportLibrary = true
     }
     
     signingConfigs {
@@ -28,6 +31,12 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+    
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    
     namespace 'com.agapeltech.myapp'
 }
 
@@ -35,6 +44,8 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.11.0'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    
     // Advanced Scanning Dependencies (CameraX + Bundled ML Kit)
     def camerax_version = "1.3.1"
     implementation "androidx.camera:camera-core:${camerax_version}"

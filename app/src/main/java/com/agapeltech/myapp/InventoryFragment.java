@@ -49,10 +49,13 @@ public class InventoryFragment extends Fragment {
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_inventory, container, false);
 
-        dbHelper = new DBHelper(requireContext());
-        currentUserRole = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("role", "STAFF");
+        Context ctx = getContext();
+        if (ctx == null) ctx = requireContext(); // Fallback but safe check
+        
+        dbHelper = new DBHelper(ctx);
+        currentUserRole = ctx.getSharedPreferences("user_session", Context.MODE_PRIVATE).getString("role", "STAFF");
 
-        initViews(view);
+        initViews(view, ctx);
         setupListeners();
         applyRoleRestrictions();
         loadFromSQLite();
@@ -60,7 +63,7 @@ public class InventoryFragment extends Fragment {
         return view;
     }
 
-    private void initViews(View v) {
+    private void initViews(View v, Context ctx) {
         itemName = v.findViewById(R.id.itemName);
         buyingPrice = v.findViewById(R.id.buyingPrice);
         sellingPrice = v.findViewById(R.id.sellingPrice);
@@ -74,14 +77,14 @@ public class InventoryFragment extends Fragment {
         headerAdminArea = v.findViewById(R.id.headerAdminArea);
         imgArrowInventory = v.findViewById(R.id.imgArrowInventory);
         recyclerView = v.findViewById(R.id.recyclerView);
-        recyclerView.setLayoutManager(new LinearLayoutManager(requireContext()));
+        recyclerView.setLayoutManager(new LinearLayoutManager(ctx));
         
-        setupCategorySpinner();
+        setupCategorySpinner(ctx);
     }
 
-    private void setupCategorySpinner() {
+    private void setupCategorySpinner(Context ctx) {
         String[] cats = {"General", "Cement/Building", "Plumbing", "Electrical", "Tools", "Other"};
-        ArrayAdapter<String> catAdapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, cats);
+        ArrayAdapter<String> catAdapter = new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_dropdown_item, cats);
         itemCategory.setAdapter(catAdapter);
     }
 
@@ -100,14 +103,14 @@ public class InventoryFragment extends Fragment {
 
                 dbHelper.insertOrUpdate(name, buy, sell, qty, cat, threshold);
                 MainActivity activity = (MainActivity) getActivity();
-                if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
-                Toast.makeText(requireContext(), "Product Saved", Toast.LENGTH_SHORT).show();
+                if (activity != null && getContext() != null && NetworkHelper.isOnline(getContext())) activity.syncOfflineData();
+                if (getContext() != null) Toast.makeText(getContext(), "Product Saved", Toast.LENGTH_SHORT).show();
                 clearInputs();
                 loadFromSQLite();
                 if (activity != null) activity.refreshInventoryAutocompleteData();
             } catch (Exception e) {
                 android.util.Log.e("InventoryFragment", "Error saving item: " + e.getMessage());
-                Toast.makeText(requireContext(), "Invalid inputs", Toast.LENGTH_SHORT).show();
+                if (getContext() != null) Toast.makeText(getContext(), "Invalid inputs", Toast.LENGTH_SHORT).show();
             }
         });
 
@@ -141,6 +144,9 @@ public class InventoryFragment extends Fragment {
 
     public void loadFromSQLite() {
         try {
+            Context ctx = getContext();
+            if (ctx == null) return;
+            
             listData.clear();
             Cursor cursor = dbHelper.getAllData(); 
             if (cursor != null) {
@@ -156,7 +162,7 @@ public class InventoryFragment extends Fragment {
                 }
                 cursor.close();
             }
-            adapter = new MaterialRecyclerViewAdapter(requireContext(), listData, this::showOptionsDialog);
+            adapter = new MaterialRecyclerViewAdapter(ctx, listData, this::showOptionsDialog);
             if (recyclerView != null) recyclerView.setAdapter(adapter);
         } catch (Exception e) {
             android.util.Log.e("InventoryFragment", "Error loading data: " + e.getMessage());
@@ -164,6 +170,9 @@ public class InventoryFragment extends Fragment {
     }
 
     private void filterResults(String query) {
+        Context ctx = getContext();
+        if (ctx == null) return;
+        
         ArrayList<HashMap<String, String>> filtered = new ArrayList<>();
         String q = query.toLowerCase();
         for (HashMap<String, String> item : listData) {
@@ -173,7 +182,7 @@ public class InventoryFragment extends Fragment {
                 filtered.add(item);
             }
         }
-        adapter = new MaterialRecyclerViewAdapter(requireContext(), filtered, position -> showOptionsDialogFromList(filtered, position));
+        adapter = new MaterialRecyclerViewAdapter(ctx, filtered, position -> showOptionsDialogFromList(filtered, position));
         recyclerView.setAdapter(adapter);
     }
 
@@ -182,18 +191,21 @@ public class InventoryFragment extends Fragment {
     }
 
     private void showOptionsDialogFromList(ArrayList<HashMap<String, String>> sourceList, final int position) {
+        Context ctx = getContext();
+        if (ctx == null) return;
+        
         String[] options = {"Edit Item", "Delete Item"};
-        new AlertDialog.Builder(requireContext()).setTitle("Manage Item").setItems(options, (dialog, which) -> {
+        new AlertDialog.Builder(ctx).setTitle("Manage Item").setItems(options, (dialog, which) -> {
             String name = sourceList.get(position).get("name");
             if (which == 0) {
-                LinearLayout layout = new LinearLayout(requireContext()); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(40,20,40,20);
-                final EditText b = new EditText(requireContext()); b.setHint("Buy Price"); 
-                final EditText s = new EditText(requireContext()); s.setHint("Sell Price");
-                final EditText q = new EditText(requireContext()); q.setHint("Stock Quantity");
-                final EditText t = new EditText(requireContext()); t.setHint("Alert Threshold");
-                final Spinner cSpin = new Spinner(requireContext());
+                LinearLayout layout = new LinearLayout(ctx); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(40,20,40,20);
+                final EditText b = new EditText(ctx); b.setHint("Buy Price"); 
+                final EditText s = new EditText(ctx); s.setHint("Sell Price");
+                final EditText q = new EditText(ctx); q.setHint("Stock Quantity");
+                final EditText t = new EditText(ctx); t.setHint("Alert Threshold");
+                final Spinner cSpin = new Spinner(ctx);
                 String[] cats = {"General", "Cement/Building", "Plumbing", "Electrical", "Tools", "Other"};
-                cSpin.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, cats));
+                cSpin.setAdapter(new ArrayAdapter<>(ctx, android.R.layout.simple_spinner_dropdown_item, cats));
 
                 Cursor c = dbHelper.getReadableDatabase().rawQuery("SELECT buying_price, selling_price, stock_qty, category, low_stock_threshold FROM materials WHERE item_name=?", new String[]{name});
                 if(c.moveToFirst()) { 
@@ -208,16 +220,16 @@ public class InventoryFragment extends Fragment {
                 
                 layout.addView(b); layout.addView(s); layout.addView(q); layout.addView(t); layout.addView(cSpin);
 
-                new AlertDialog.Builder(requireContext()).setTitle("Edit Item: " + name).setView(layout).setPositiveButton("Update", (d, w) -> {
+                new AlertDialog.Builder(ctx).setTitle("Edit Item: " + name).setView(layout).setPositiveButton("Update", (d, w) -> {
                     dbHelper.insertOrUpdate(name, Double.parseDouble(b.getText().toString()), Double.parseDouble(s.getText().toString()), Integer.parseInt(q.getText().toString()), cSpin.getSelectedItem().toString(), Integer.parseInt(t.getText().toString()));
                     MainActivity activity = (MainActivity) getActivity();
-                    if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
+                    if (activity != null && NetworkHelper.isOnline(ctx)) activity.syncOfflineData();
                     loadFromSQLite();
                 }).show();
             } else { 
                 dbHelper.markForDeletion(name); 
                 MainActivity activity = (MainActivity) getActivity();
-                if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData(); 
+                if (activity != null && NetworkHelper.isOnline(ctx)) activity.syncOfflineData(); 
                 loadFromSQLite(); 
             }
         }).show();

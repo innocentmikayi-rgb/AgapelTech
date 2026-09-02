@@ -19,7 +19,7 @@
         <ImageView
             android:layout_width="32dp"
             android:layout_height="32dp"
-            android:src="@drawable/logo_agapel"
+            app:srcCompat="@drawable/logo_agapel"
             android:layout_marginEnd="10dp"
             android:contentDescription="@string/logo_description"/>
 
@@ -58,7 +58,7 @@
                 android:id="@+id/nav_home_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_home"
+                app:srcCompat="@drawable/ic_home"
                 app:tint="?attr/colorPrimary"
                 android:contentDescription="@string/nav_home" />
             <TextView
@@ -84,7 +84,7 @@
                 android:id="@+id/nav_products_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_products"
+                app:srcCompat="@drawable/ic_products"
                 app:tint="?android:attr/textColorSecondary"
                 android:contentDescription="@string/nav_products" />
             <TextView
@@ -110,7 +110,7 @@
                 android:id="@+id/nav_sales_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_sales"
+                app:srcCompat="@drawable/ic_sales"
                 app:tint="?android:attr/textColorSecondary"
                 android:contentDescription="@string/nav_sales" />
             <TextView
@@ -136,7 +136,7 @@
                 android:id="@+id/nav_reports_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_reports"
+                app:srcCompat="@drawable/ic_reports"
                 app:tint="?android:attr/textColorSecondary"
                 android:contentDescription="@string/nav_reports" />
             <TextView
@@ -162,7 +162,7 @@
                 android:id="@+id/nav_more_icon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:src="@drawable/ic_more"
+                app:srcCompat="@drawable/ic_more"
                 app:tint="?android:attr/textColorSecondary"
                 android:contentDescription="@string/nav_more" />
             <TextView
