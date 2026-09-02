@@ -70,19 +70,11 @@
         android:textColor="#FFFFFF"
         android:layout_marginBottom="8dp"/>
 
-    <Button
-        android:id="@+id/btnRegister"
-        android:layout_width="match_parent"
-        android:layout_height="56dp"
-        android:text="CREATE NEW ACCOUNT"
-        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-        android:textColor="?attr/colorPrimary"/>
-
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="24dp"
-        android:text="Cloud Authentication Enabled"
+        android:text="Enterprise Security Enabled"
         android:textColor="?android:attr/textColorSecondary"
         android:textSize="12sp"
         android:textStyle="italic"/>

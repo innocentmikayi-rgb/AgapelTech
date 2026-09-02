@@ -11,6 +11,7 @@
     <uses-feature android:name="android.hardware.camera" android:required="false" />
 
     <application
+        android:name=".AgapelApp"
         android:allowBackup="true"
         android:icon="@drawable/logo_agapel"
         android:label="@string/app_name"

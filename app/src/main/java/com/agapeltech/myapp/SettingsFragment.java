@@ -34,7 +34,7 @@ import java.util.Objects;
 
 public class SettingsFragment extends Fragment {
 
-    private Button adminLoginBtn, btnManageExpenses, btnSwitchTheme, btnCheckUpdate;
+    private Button adminLoginBtn, btnManageExpenses, btnSwitchTheme, btnCheckUpdate, btnManageUsers;
     private DBHelper dbHelper;
     private String currentUserRole = "STAFF";
 
@@ -52,6 +52,7 @@ public class SettingsFragment extends Fragment {
         initViews(view);
         setupListeners();
         updateThemeButtonUI();
+        applyRoleRestrictions();
 
         return view;
     }
@@ -61,6 +62,7 @@ public class SettingsFragment extends Fragment {
         btnManageExpenses = v.findViewById(R.id.btnManageExpenses);
         btnSwitchTheme = v.findViewById(R.id.btnSwitchTheme);
         btnCheckUpdate = v.findViewById(R.id.btnCheckUpdate);
+        btnManageUsers = v.findViewById(R.id.btnManageUsers);
 
         adminLoginBtn.setText("LOGOUT");
     }
@@ -70,6 +72,18 @@ public class SettingsFragment extends Fragment {
         btnManageExpenses.setOnClickListener(v -> showExpenseRecordsDialog());
         btnSwitchTheme.setOnClickListener(v -> toggleTheme());
         btnCheckUpdate.setOnClickListener(v -> checkForUpdates());
+        btnManageUsers.setOnClickListener(v -> {
+            MainActivity activity = (MainActivity) getActivity();
+            if (activity != null) {
+                activity.replaceFragment(new UserManagementFragment(), null);
+            }
+        });
+    }
+
+    private void applyRoleRestrictions() {
+        if ("MANAGER".equals(currentUserRole)) {
+            btnManageUsers.setVisibility(View.VISIBLE);
+        }
     }
 
     private void showLogoutDialog() {

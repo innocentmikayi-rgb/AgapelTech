@@ -18,7 +18,7 @@ import com.google.firebase.auth.FirebaseUser;
 public class LoginActivity extends AppCompatActivity {
 
     private TextInputEditText editEmail, editPassword;
-    private Button btnLogin, btnRegister;
+    private Button btnLogin;
     private FirebaseAuth mAuth;
     private ProgressDialog progressDialog;
 
@@ -41,13 +41,11 @@ public class LoginActivity extends AppCompatActivity {
         editEmail = findViewById(R.id.editEmail);
         editPassword = findViewById(R.id.editPassword);
         btnLogin = findViewById(R.id.btnLogin);
-        btnRegister = findViewById(R.id.btnRegister);
         
         progressDialog = new ProgressDialog(this);
         progressDialog.setMessage("Authenticating...");
 
         btnLogin.setOnClickListener(v -> performLogin());
-        btnRegister.setOnClickListener(v -> showRegistrationDialog());
     }
 
     private void performLogin() {
@@ -64,70 +62,45 @@ public class LoginActivity extends AppCompatActivity {
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
                         FirebaseUser user = mAuth.getCurrentUser();
-                        fetchUserRoleAndProceed(user.getUid(), email);
+                        if (user != null) {
+                            fetchUserRoleAndProceed(user.getUid(), email);
+                        }
                     } else {
                         progressDialog.dismiss();
-                        Toast.makeText(LoginActivity.this, "Login Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                        String error = task.getException() != null ? task.getException().getMessage() : "Unknown Error";
+                        Toast.makeText(LoginActivity.this, "Login Failed: " + error, Toast.LENGTH_LONG).show();
                     }
                 });
     }
 
     private void fetchUserRoleAndProceed(String uid, String email) {
-        FirebaseHelper.getUserRole(uid, role -> {
-            // Save session locally
-            SharedPreferences prefs = getSharedPreferences("user_session", MODE_PRIVATE);
-            SharedPreferences.Editor editor = prefs.edit();
-            editor.putString("username", email);
-            editor.putString("role", role);
-            editor.apply();
-
-            progressDialog.dismiss();
-            startActivity(new Intent(LoginActivity.this, MainActivity.class));
-            finish();
-        });
-    }
-
-    private void showRegistrationDialog() {
-        String email = editEmail.getText().toString().trim();
-        String pass = editPassword.getText().toString().trim();
-
-        if (email.isEmpty() || pass.isEmpty()) {
-            Toast.makeText(this, "Enter desired email and password first", Toast.LENGTH_SHORT).show();
+        // Super Admin Bypass for setup
+        if ("innocentmikayi@gmail.com".equalsIgnoreCase(email)) {
+            saveSessionAndProceed("MANAGER", email);
             return;
         }
 
-        String[] roles = {"MANAGER", "STAFF"};
-        new AlertDialog.Builder(this)
-                .setTitle("Select User Role")
-                .setItems(roles, (dialog, which) -> {
-                    String selectedRole = roles[which];
-                    performRegistration(email, pass, selectedRole);
-                })
-                .show();
+        FirebaseHelper.getUserRole(uid, role -> {
+            if (role == null || role.isEmpty() || "NONE".equals(role)) {
+                progressDialog.dismiss();
+                mAuth.signOut(); // Block access
+                Toast.makeText(this, "Account pending approval. Please contact Admin.", Toast.LENGTH_LONG).show();
+                return;
+            }
+            saveSessionAndProceed(role, email);
+        });
     }
 
-    private void performRegistration(String email, String pass, String role) {
-        progressDialog.setMessage("Creating Account...");
-        progressDialog.show();
+    private void saveSessionAndProceed(String role, String email) {
+        SharedPreferences prefs = getSharedPreferences("user_session", MODE_PRIVATE);
+        SharedPreferences.Editor editor = prefs.edit();
+        editor.putString("username", email);
+        editor.putString("role", role);
+        editor.apply();
 
-        mAuth.createUserWithEmailAndPassword(email, pass)
-                .addOnCompleteListener(this, task -> {
-                    if (task.isSuccessful()) {
-                        String uid = mAuth.getCurrentUser().getUid();
-                        FirebaseHelper.setUserRole(uid, role, success -> {
-                            progressDialog.dismiss();
-                            if (success) {
-                                Toast.makeText(this, "Registration Successful!", Toast.LENGTH_SHORT).show();
-                                fetchUserRoleAndProceed(uid, email);
-                            } else {
-                                Toast.makeText(this, "Account created but role failed to save.", Toast.LENGTH_LONG).show();
-                            }
-                        });
-                    } else {
-                        progressDialog.dismiss();
-                        Toast.makeText(this, "Registration Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
-                    }
-                });
+        if (progressDialog.isShowing()) progressDialog.dismiss();
+        startActivity(new Intent(LoginActivity.this, MainActivity.class));
+        finish();
     }
 
     private void applyTheme() {
