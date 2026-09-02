@@ -150,14 +150,21 @@ public class InventoryFragment extends Fragment {
             listData.clear();
             Cursor cursor = dbHelper.getAllData(); 
             if (cursor != null) {
+                int nameIdx = cursor.getColumnIndex("item_name");
+                int buyIdx = cursor.getColumnIndex("buying_price");
+                int sellIdx = cursor.getColumnIndex("selling_price");
+                int qtyIdx = cursor.getColumnIndex("stock_qty");
+                int threshIdx = cursor.getColumnIndex("low_stock_threshold");
+                int catIdx = cursor.getColumnIndex("category");
+
                 while (cursor.moveToNext()) {
                     HashMap<String, String> map = new HashMap<>();
-                    map.put("name", cursor.getString(1)); 
-                    map.put("buy", "Buy: UGX " + MainActivity.formatMoney(cursor.getDouble(2))); 
-                    map.put("sell", "Sell: UGX " + MainActivity.formatMoney(cursor.getDouble(3)));
-                    map.put("qty_raw", "" + cursor.getInt(6));
-                    map.put("threshold", "" + cursor.getInt(7));
-                    map.put("category", cursor.getString(8));
+                    map.put("name", nameIdx != -1 ? cursor.getString(nameIdx) : "Unknown"); 
+                    map.put("buy", "Buy: UGX " + MainActivity.formatMoney(buyIdx != -1 ? cursor.getDouble(buyIdx) : 0)); 
+                    map.put("sell", "Sell: UGX " + MainActivity.formatMoney(sellIdx != -1 ? cursor.getDouble(sellIdx) : 0));
+                    map.put("qty_raw", "" + (qtyIdx != -1 ? cursor.getInt(qtyIdx) : 0));
+                    map.put("threshold", "" + (threshIdx != -1 ? cursor.getInt(threshIdx) : 5));
+                    map.put("category", catIdx != -1 ? cursor.getString(catIdx) : "General");
                     listData.add(map);
                 }
                 cursor.close();

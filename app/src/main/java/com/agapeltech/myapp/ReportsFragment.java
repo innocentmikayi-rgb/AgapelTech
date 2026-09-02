@@ -109,24 +109,38 @@ public class ReportsFragment extends Fragment {
         double totalSales = 0, totalProfit = 0, totalCredit = 0;
         
         if (cursor != null) {
+            int idIdx = cursor.getColumnIndex("id");
+            int dateIdx = cursor.getColumnIndex("sale_date");
+            int partIdx = cursor.getColumnIndex("particulars");
+            int qtyIdx = cursor.getColumnIndex("qty");
+            int spIdx = cursor.getColumnIndex("selling_price");
+            int paidIdx = cursor.getColumnIndex("actual_amount");
+            int balIdx = cursor.getColumnIndex("balance");
+            int statusIdx = cursor.getColumnIndex("status_tag");
+            int custIdx = cursor.getColumnIndex("customer_name");
+            int phoneIdx = cursor.getColumnIndex("customer_phone");
+            int timeIdx = cursor.getColumnIndex("sale_time");
+
             while (cursor.moveToNext()) {
                 HashMap<String, String> map = new HashMap<>();
-                map.put("id", "" + cursor.getInt(0));
-                map.put("date", cursor.getString(1));
-                map.put("particulars", cursor.getString(2));
-                map.put("qty", "" + cursor.getInt(3));
-                map.put("sp", String.format(Locale.US, "%.0f", cursor.getDouble(5)));
-                map.put("paid", String.format(Locale.US, "%.0f", cursor.getDouble(8)));
-                map.put("balance", String.format(Locale.US, "%.0f", cursor.getDouble(10)));
-                map.put("status", cursor.getString(11));
-                map.put("customer", cursor.getString(12));
-                map.put("phone", cursor.getString(13));
-                map.put("time", cursor.getString(14));
+                map.put("id", idIdx != -1 ? "" + cursor.getInt(idIdx) : "0");
+                map.put("date", dateIdx != -1 ? cursor.getString(dateIdx) : "");
+                map.put("particulars", partIdx != -1 ? cursor.getString(partIdx) : "");
+                map.put("qty", qtyIdx != -1 ? "" + cursor.getInt(qtyIdx) : "0");
+                map.put("sp", String.format(Locale.US, "%.0f", spIdx != -1 ? cursor.getDouble(spIdx) : 0));
+                map.put("paid", String.format(Locale.US, "%.0f", paidIdx != -1 ? cursor.getDouble(paidIdx) : 0));
+                map.put("balance", String.format(Locale.US, "%.0f", balIdx != -1 ? cursor.getDouble(balIdx) : 0));
+                map.put("status", statusIdx != -1 ? cursor.getString(statusIdx) : "Unknown");
+                map.put("customer", custIdx != -1 ? cursor.getString(custIdx) : "Walk-in");
+                map.put("phone", phoneIdx != -1 ? cursor.getString(phoneIdx) : "");
+                map.put("time", timeIdx != -1 ? cursor.getString(timeIdx) : "");
                 salesListData.add(map);
 
-                totalSales += cursor.getDouble(8);
-                totalProfit += cursor.getDouble(9);
-                totalCredit += cursor.getDouble(10);
+                if (paidIdx != -1) totalSales += cursor.getDouble(paidIdx);
+                if (balIdx != -1) totalCredit += cursor.getDouble(balIdx);
+                // Profit calculation fix
+                int profIdx = cursor.getColumnIndex("actual_profit");
+                if (profIdx != -1) totalProfit += cursor.getDouble(profIdx);
             }
             cursor.close();
         }

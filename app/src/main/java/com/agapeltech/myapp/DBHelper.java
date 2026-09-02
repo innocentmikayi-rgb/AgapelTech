@@ -69,8 +69,8 @@ public class DBHelper extends SQLiteOpenHelper {
                 "role TEXT)");
 
         // Seed default users
-        db.execSQL("INSERT INTO users (username, password, role) VALUES ('admin', '1234', 'MANAGER')");
-        db.execSQL("INSERT INTO users (username, password, role) VALUES ('staff', '0000', 'STAFF')");
+        db.execSQL("INSERT OR IGNORE INTO users (username, password, role) VALUES ('admin', '1234', 'MANAGER')");
+        db.execSQL("INSERT OR IGNORE INTO users (username, password, role) VALUES ('staff', '0000', 'STAFF')");
     }
 
     @Override

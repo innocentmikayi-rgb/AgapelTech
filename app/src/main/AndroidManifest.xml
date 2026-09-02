@@ -17,6 +17,7 @@
         android:roundIcon="@drawable/logo_agapel"
         android:theme="@style/AppTheme"
         android:resizeableActivity="true"
+        android:enableOnBackInvokedCallback="true"
         tools:replace="android:allowBackup">
 
 

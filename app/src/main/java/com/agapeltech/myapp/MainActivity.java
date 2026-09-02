@@ -67,6 +67,9 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Enable Edge-to-Edge for Android 15+ compatibility
+        androidx.activity.EdgeToEdge.enable(this);
+        
         // Global Crash Handler for better stability
         Thread.setDefaultUncaughtExceptionHandler((thread, throwable) -> {
             android.util.Log.e("CRASH", "Uncaught Exception: ", throwable);
@@ -137,11 +140,15 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void replaceFragment(Fragment fragment, LinearLayout activeTab) {
+        if (isFinishing() || isDestroyed()) return;
+        
         FragmentManager fragmentManager = getSupportFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
         fragmentTransaction.setCustomAnimations(R.anim.fade_in, R.anim.fade_out);
         fragmentTransaction.replace(R.id.fragment_container, fragment);
-        fragmentTransaction.commit();
+        // commitAllowingStateLoss is safer for UI interactions that might happen 
+        // during state transitions on very fast/modern devices (Android 15+)
+        fragmentTransaction.commitAllowingStateLoss();
         highlightTab(activeTab);
     }
 
