@@ -47,6 +47,15 @@
             android:textColor="#0D3B84"
             android:layout_marginBottom="16dp"/>
 
+        <Button
+            android:id="@+id/btnViewAdvancedAnalytics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="VIEW ADVANCED ANALYTICS"
+            android:layout_marginBottom="16dp"
+            style="@style/Widget.MaterialComponents.Button.UnelevatedButton"
+            android:backgroundTint="?attr/colorSecondary"/>
+
         <!-- Net Profit Card -->
         <LinearLayout
             android:layout_width="match_parent"

@@ -208,21 +208,92 @@ public class ReportsFragment extends Fragment {
     }
 
     private void shareReceipt(HashMap<String, String> sale) {
-        String receipt = "AgapelTech Receipt\n" +
-                "------------------\n" +
-                "Item: " + sale.get("particulars") + "\n" +
-                "Qty: " + sale.get("qty") + "\n" +
-                "Price: UGX " + sale.get("sp") + "\n" +
-                "Paid: UGX " + sale.get("paid") + "\n" +
-                "Balance: UGX " + sale.get("balance") + "\n" +
-                "Date: " + sale.get("date") + "\n" +
-                "------------------\n" +
-                "Thank you for your business!";
+        PdfDocument document = new PdfDocument();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(300, 500, 1).create(); // Thermal receipt size roughly
+        PdfDocument.Page page = document.startPage(pageInfo);
+        Canvas canvas = page.getCanvas();
+        Paint paint = new Paint();
         
-        Intent intent = new Intent(Intent.ACTION_SEND);
-        intent.setType("text/plain");
-        intent.putExtra(Intent.EXTRA_TEXT, receipt);
-        startActivity(Intent.createChooser(intent, "Share Receipt"));
+        int y = 40;
+        paint.setTextSize(18);
+        paint.setFakeBoldText(true);
+        canvas.drawText("AGAPEL TECH", 80, y, paint);
+        
+        y += 20;
+        paint.setTextSize(10);
+        paint.setFakeBoldText(false);
+        canvas.drawText("Retail Management System", 85, y, paint);
+        
+        y += 30;
+        paint.setStrokeWidth(1);
+        canvas.drawLine(20, y, 280, y, paint);
+        
+        y += 25;
+        paint.setFakeBoldText(true);
+        canvas.drawText("OFFICIAL RECEIPT", 100, y, paint);
+        
+        y += 25;
+        paint.setFakeBoldText(false);
+        canvas.drawText("Date: " + sale.get("date") + " " + sale.get("time"), 20, y, paint);
+        canvas.drawText("Receipt ID: #" + sale.get("id"), 20, y + 15, paint);
+        
+        y += 45;
+        paint.setFakeBoldText(true);
+        canvas.drawText("ITEM", 20, y, paint);
+        canvas.drawText("QTY", 180, y, paint);
+        canvas.drawText("TOTAL", 230, y, paint);
+        
+        y += 10;
+        canvas.drawLine(20, y, 280, y, paint);
+        
+        y += 20;
+        paint.setFakeBoldText(false);
+        String itemName = sale.get("particulars");
+        if (itemName != null && itemName.length() > 20) itemName = itemName.substring(0, 17) + "...";
+        String qty = sale.get("qty");
+        String paid = sale.get("paid");
+        canvas.drawText(itemName != null ? itemName : "", 20, y, paint);
+        canvas.drawText(qty != null ? qty : "0", 185, y, paint);
+        canvas.drawText(paid != null ? paid : "0", 230, y, paint);
+        
+        y += 40;
+        canvas.drawLine(20, y, 280, y, paint);
+        
+        y += 20;
+        paint.setFakeBoldText(true);
+        canvas.drawText("TOTAL PAID:", 20, y, paint);
+        canvas.drawText("UGX " + sale.get("paid"), 180, y, paint);
+        
+        y += 15;
+        canvas.drawText("BALANCE:", 20, y, paint);
+        canvas.drawText("UGX " + sale.get("balance"), 180, y, paint);
+        
+        y += 40;
+        paint.setTextSize(9);
+        paint.setFakeBoldText(false);
+        canvas.drawText("Customer: " + sale.get("customer"), 20, y, paint);
+        
+        y += 30;
+        paint.setTextSize(10);
+        paint.setFakeBoldText(true);
+        canvas.drawText("THANK YOU FOR YOUR BUSINESS!", 60, y, paint);
+        
+        document.finishPage(page);
+        
+        File file = new File(requireContext().getCacheDir(), "Receipt_" + sale.get("id") + ".pdf");
+        try {
+            document.writeTo(new FileOutputStream(file));
+            document.close();
+            
+            Uri path = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".fileprovider", file);
+            Intent intent = new Intent(Intent.ACTION_SEND);
+            intent.setType("application/pdf");
+            intent.putExtra(Intent.EXTRA_STREAM, path);
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(Intent.createChooser(intent, "Share Receipt"));
+        } catch (IOException e) {
+            Toast.makeText(requireContext(), "PDF Error", Toast.LENGTH_SHORT).show();
+        }
     }
 
     private void exportToExcel() {

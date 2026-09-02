@@ -82,7 +82,7 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("user_session", MODE_PRIVATE);
         String username = prefs.getString("username", null);
 
-        if (username == null) {
+        if (username == null || com.google.firebase.auth.FirebaseAuth.getInstance().getCurrentUser() == null) {
             startActivity(new Intent(this, LoginActivity.class));
             finish();
             return;

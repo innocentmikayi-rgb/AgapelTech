@@ -1,6 +1,13 @@
 package com.agapeltech.myapp;
 
 import android.util.Log;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
+
 import java.io.OutputStream;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
@@ -8,10 +15,39 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import org.json.JSONObject;
 
+import androidx.annotation.NonNull;
+
 public class FirebaseHelper {
 
     private static final String TAG = "FirebaseHelper";
     private static final String BASE_URL = "https://myshopapp-3941d-default-rtdb.firebaseio.com";
+
+    // --- SDK Based Methods ---
+
+    public static void getUserRole(String uid, final RoleCallback callback) {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(uid).child("role");
+        ref.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                String role = snapshot.getValue(String.class);
+                if (callback != null) callback.onRoleReceived(role != null ? role : "STAFF");
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                if (callback != null) callback.onRoleReceived("STAFF");
+            }
+        });
+    }
+
+    public static void setUserRole(String uid, String role, final SimpleCallback callback) {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(uid).child("role");
+        ref.setValue(role).addOnCompleteListener(task -> {
+            if (callback != null) callback.onComplete(task.isSuccessful());
+        });
+    }
+
+    // --- Legacy REST Methods (Kept for existing Sync logic) ---
 
     public static void createRecord(final String path, final JSONObject data, final SaveCallback callback){
         new Thread(() -> {
@@ -160,4 +196,6 @@ public class FirebaseHelper {
     public interface SaveCallback { void onSaved(String key); }
     public interface DeleteCallback { void onDeleted(); }
     public interface UpdateCallback { void onUpdated(); }
+    public interface RoleCallback { void onRoleReceived(String role); }
+    public interface SimpleCallback { void onComplete(boolean success); }
 }

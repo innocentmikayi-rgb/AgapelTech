@@ -5,7 +5,7 @@ android {
 
     defaultConfig {
         applicationId "com.agapeltech.myapp"
-        minSdkVersion 21
+        minSdkVersion 23
         targetSdkVersion 35
         versionCode 5
         versionName "1.0.4"
@@ -56,6 +56,11 @@ dependencies {
     implementation 'com.google.android.gms:play-services-code-scanner:16.1.0'
     
     implementation 'com.github.PhilJay:MPAndroidChart:3.1.0'
+
+    // Firebase SDK
+    implementation platform('com.google.firebase:firebase-bom:33.1.2')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-database'
 }
 
 apply plugin: 'com.google.gms.google-services'

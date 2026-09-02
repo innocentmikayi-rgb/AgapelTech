@@ -77,6 +77,7 @@ public class SettingsFragment extends Fragment {
                 .setTitle("Logout")
                 .setMessage("Are you sure you want to logout?")
                 .setPositiveButton("Logout", (dialog, which) -> {
+                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
                     SharedPreferences.Editor editor = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).edit();
                     editor.clear();
                     editor.apply();

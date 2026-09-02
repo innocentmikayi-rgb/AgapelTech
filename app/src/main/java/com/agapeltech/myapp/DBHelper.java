@@ -534,6 +534,22 @@ public class DBHelper extends SQLiteOpenHelper {
         return db.rawQuery("SELECT item_name, stock_qty FROM materials WHERE stock_qty <= low_stock_threshold AND synced != -1", null);
     }
 
+    public Cursor getTopSellingProducts(int limit) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT particulars, SUM(qty) as total_qty FROM sales_table GROUP BY particulars ORDER BY total_qty DESC LIMIT " + limit, null);
+    }
+
+    public double getAverageTransactionValue(String monthQuery) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        double avg = 0;
+        Cursor cursor = db.rawQuery("SELECT AVG(actual_amount) FROM sales_table WHERE sale_date LIKE ?", new String[]{"%" + monthQuery});
+        if (cursor != null && cursor.moveToFirst()) {
+            avg = cursor.getDouble(0);
+            cursor.close();
+        }
+        return avg;
+    }
+
     // ================= USER METHODS =================
 
     public String checkLogin(String username, String password) {

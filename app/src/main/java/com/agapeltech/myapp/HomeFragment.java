@@ -96,6 +96,17 @@ public class HomeFragment extends Fragment {
     private void setupListeners() {
         btnQuickExpense.setOnClickListener(v -> showExpenseDialog());
         btnQuickDebt.setOnClickListener(v -> showDebtorsDialog());
+        
+        View btnAnalytics = getView() != null ? getView().findViewById(R.id.btnViewAdvancedAnalytics) : null;
+        if (btnAnalytics != null) {
+            btnAnalytics.setOnClickListener(v -> {
+                MainActivity activity = (MainActivity) getActivity();
+                if (activity != null) {
+                    activity.replaceFragment(new AnalyticsFragment(), null);
+                }
+            });
+        }
+
         rgGraphRange.setOnCheckedChangeListener((group, checkedId) -> {
             if (checkedId == R.id.rbWeekly) updateSalesChart("weekly");
             else if (checkedId == R.id.rbMonthly) updateSalesChart("monthly");
