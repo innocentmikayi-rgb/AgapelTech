@@ -8,6 +8,7 @@ import android.os.Build;
 
 public class NetworkHelper {
 
+    @SuppressWarnings("deprecation")
     public static boolean isOnline(Context context) {
         if (context == null) return false;
         ConnectivityManager cm = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
