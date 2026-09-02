@@ -120,72 +120,85 @@ public class HomeFragment extends Fragment {
     }
 
     public void loadDashboardData() {
-        SimpleDateFormat sdfDate = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
-        SimpleDateFormat sdfMonth = new SimpleDateFormat("MM/yyyy", Locale.US);
-        String today = sdfDate.format(new Date());
-        String currentMonth = sdfMonth.format(new Date());
-        
-        Calendar cal = Calendar.getInstance();
-        cal.add(Calendar.DAY_OF_YEAR, -1);
-        String yesterday = sdfDate.format(cal.getTime());
+        new Thread(() -> {
+            try {
+                SimpleDateFormat sdfDate = new SimpleDateFormat("dd/MM/yyyy", Locale.US);
+                SimpleDateFormat sdfMonth = new SimpleDateFormat("MM/yyyy", Locale.US);
+                String today = sdfDate.format(new Date());
+                String currentMonth = sdfMonth.format(new Date());
+                
+                Calendar cal = Calendar.getInstance();
+                cal.add(Calendar.DAY_OF_YEAR, -1);
+                String yesterday = sdfDate.format(cal.getTime());
 
-        double monthlySalesTotal = 0, monthlyProfitTotal = 0;
-        Cursor cSales = dbHelper.getMonthlySalesRecords("%" + currentMonth);
-        if (cSales != null) {
-            while (cSales.moveToNext()) { 
-                monthlySalesTotal += cSales.getDouble(8); 
-                monthlyProfitTotal += cSales.getDouble(9); 
+                double monthlySalesTotal = 0, monthlyProfitTotal = 0;
+                Cursor cSales = dbHelper.getMonthlySalesRecords("%" + currentMonth);
+                if (cSales != null) {
+                    while (cSales.moveToNext()) { 
+                        monthlySalesTotal += cSales.getDouble(8); 
+                        monthlyProfitTotal += cSales.getDouble(9); 
+                    }
+                    cSales.close();
+                }
+                
+                double monthlyExp = dbHelper.getMonthlyExpenses(currentMonth);
+                
+                int totalProducts = 0;
+                Cursor totalCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials", null);
+                if(totalCur.moveToFirst()) totalProducts = totalCur.getInt(0);
+                totalCur.close();
+
+                int lowStockCount = 0;
+                Cursor stockCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials WHERE stock_qty <= low_stock_threshold", null);
+                if(stockCur.moveToFirst()) lowStockCount = stockCur.getInt(0);
+                stockCur.close();
+
+                HashMap<String, Double> todayTotals = dbHelper.getDailyTotals(today);
+                HashMap<String, Double> yesterdayTotals = dbHelper.getDailyTotals(yesterday);
+                
+                Cursor cDebt = dbHelper.getCustomersWithDebt();
+                double totalDebt = 0;
+                if (cDebt != null) { while (cDebt.moveToNext()) totalDebt += cDebt.getDouble(1); cDebt.close(); }
+
+                final double fSales = monthlySalesTotal, fProfit = monthlyProfitTotal, fExp = monthlyExp, fDebt = totalDebt;
+                final int fTotalProd = totalProducts, fLowStock = lowStockCount;
+                final HashMap<String, Double> fToday = todayTotals, fYest = yesterdayTotals;
+
+                if (getActivity() != null) {
+                    getActivity().runOnUiThread(() -> {
+                        txtDashGrossSales.setText(String.format(Locale.US, "UGX %s", formatMoney(fSales)));
+                        txtDashExpenses.setText(String.format(Locale.US, "UGX %s", formatMoney(fExp)));
+                        txtDashNetProfit.setText(String.format(Locale.US, "UGX %s", formatMoney(fProfit - fExp)));
+                        txtDashboardGreeting.setText(String.format(Locale.US, "Welcome, %s!", currentUsername));
+                        txtDashboardInventoryCount.setText(String.format(Locale.US, "%d Products in Inventory", fTotalProd));
+                        txtDashLowStockBadge.setText(String.format(Locale.US, "%d Items Low Stock", fLowStock));
+                        txtDashLowStockBadge.setTextColor(fLowStock > 0 ? Color.parseColor("#FFD54F") : Color.parseColor("#81C784"));
+                        txtDashDebt.setText("UGX " + formatMoney(fDebt));
+
+                        double todaySales = fToday.get("sales") != null ? fToday.get("sales") : 0;
+                        double yesterdaySales = fYest.get("sales") != null ? fYest.get("sales") : 0;
+                        txtComparisonTitle.setText("vs. Yesterday");
+                        if (yesterdaySales > 0) {
+                            double growth = ((todaySales - yesterdaySales) / yesterdaySales) * 100;
+                            txtComparisonValue.setText(String.format(Locale.US, "%s%.1f%% Sales", growth >= 0 ? "+" : "", growth));
+                            txtComparisonValue.setTextColor(growth >= 0 ? Color.parseColor("#2E7D32") : Color.RED);
+                        } else {
+                            txtComparisonValue.setText("New Day!");
+                            txtComparisonValue.setTextColor(Color.GRAY);
+                        }
+                        
+                        updateSalesChart("weekly");
+                        updateProfitPieChart();
+                        checkLowStockItems();
+                    });
+                }
+            } catch (Exception e) {
+                android.util.Log.e("HomeFragment", "Error loading dashboard: " + e.getMessage());
             }
-            cSales.close();
-        }
-        
-        double monthlyExp = dbHelper.getMonthlyExpenses(currentMonth);
-        txtDashGrossSales.setText(String.format(Locale.US, "UGX %s", formatMoney(monthlySalesTotal)));
-        txtDashExpenses.setText(String.format(Locale.US, "UGX %s", formatMoney(monthlyExp)));
-        txtDashNetProfit.setText(String.format(Locale.US, "UGX %s", formatMoney(monthlyProfitTotal - monthlyExp)));
-        
-        // v1.0.3 New Features
-        txtDashboardGreeting.setText(String.format(Locale.US, "Welcome, %s!", currentUsername));
-        
-        int totalProducts = 0;
-        Cursor totalCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials", null);
-        if(totalCur.moveToFirst()) totalProducts = totalCur.getInt(0);
-        totalCur.close();
-        txtDashboardInventoryCount.setText(String.format(Locale.US, "%d Products in Inventory", totalProducts));
+        }).start();
+    }
 
-        // Low Stock Badge
-        int lowStockCount = 0;
-        Cursor stockCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials WHERE stock_qty <= low_stock_threshold", null);
-        if(stockCur.moveToFirst()) lowStockCount = stockCur.getInt(0);
-        stockCur.close();
-        txtDashLowStockBadge.setText(String.format(Locale.US, "%d Items Low Stock", lowStockCount));
-        txtDashLowStockBadge.setTextColor(lowStockCount > 0 ? Color.parseColor("#FFD54F") : Color.parseColor("#81C784"));
-
-        // Comparison Metric: Sales vs Yesterday
-        HashMap<String, Double> todayTotals = dbHelper.getDailyTotals(today);
-        HashMap<String, Double> yesterdayTotals = dbHelper.getDailyTotals(yesterday);
-        
-        Double todaySalesVal = todayTotals.get("sales");
-        Double yesterdaySalesVal = yesterdayTotals.get("sales");
-        double todaySales = todaySalesVal != null ? todaySalesVal : 0;
-        double yesterdaySales = yesterdaySalesVal != null ? yesterdaySalesVal : 0;
-        
-        txtComparisonTitle.setText("vs. Yesterday");
-        if (yesterdaySales > 0) {
-            double growth = ((todaySales - yesterdaySales) / yesterdaySales) * 100;
-            txtComparisonValue.setText(String.format(Locale.US, "%s%.1f%% Sales", growth >= 0 ? "+" : "", growth));
-            txtComparisonValue.setTextColor(growth >= 0 ? Color.parseColor("#2E7D32") : Color.RED);
-        } else {
-            txtComparisonValue.setText("New Day!");
-            txtComparisonValue.setTextColor(Color.GRAY);
-        }
-
-        Cursor cDebt = dbHelper.getCustomersWithDebt();
-        double totalDebt = 0;
-        if (cDebt != null) { while (cDebt.moveToNext()) totalDebt += cDebt.getDouble(1); cDebt.close(); }
-        txtDashDebt.setText("UGX " + formatMoney(totalDebt));
-
-        // Low Stock Alert Logic
+    private void checkLowStockItems() {
         Cursor cLow = dbHelper.getLowStockItems();
         if (cLow != null && cLow.getCount() > 0) {
             layoutLowStockAlert.setVisibility(View.VISIBLE);
@@ -199,9 +212,6 @@ public class HomeFragment extends Fragment {
             layoutLowStockAlert.setVisibility(View.GONE);
             if (cLow != null) cLow.close();
         }
-
-        updateSalesChart("weekly");
-        updateProfitPieChart();
     }
 
     private void updateSalesChart(String range) {
