@@ -13,12 +13,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="56dp"
-        android:fitsSystemWindows="true"
         android:background="?attr/colorPrimary"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
         android:layout_alignParentTop="true">
 
         <ImageView
@@ -43,13 +42,12 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:minHeight="64dp"
-        android:fitsSystemWindows="true"
         android:layout_alignParentBottom="true"
         android:background="?attr/colorSurface"
         android:elevation="8dp"
         android:orientation="horizontal"
         android:baselineAligned="false"
-        android:weightSum="5">
+        android:weightSum="6">
 
         <LinearLayout
             android:id="@+id/nav_home"
@@ -92,14 +90,14 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 app:srcCompat="@drawable/ic_products"
-                app:tint="#616161"
+                app:tint="@color/nav_unselected"
                 android:contentDescription="@string/nav_products" />
             <TextView
                 android:id="@+id/nav_products_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/nav_products"
-                android:textColor="#616161"
+                android:textColor="@color/nav_unselected"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -118,14 +116,14 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 app:srcCompat="@drawable/ic_sales"
-                app:tint="#616161"
+                app:tint="@color/nav_unselected"
                 android:contentDescription="@string/nav_sales" />
             <TextView
                 android:id="@+id/nav_sales_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/nav_sales"
-                android:textColor="#616161"
+                android:textColor="@color/nav_unselected"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -144,14 +142,40 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 app:srcCompat="@drawable/ic_reports"
-                app:tint="#616161"
+                app:tint="@color/nav_unselected"
                 android:contentDescription="@string/nav_reports" />
             <TextView
                 android:id="@+id/nav_reports_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/nav_reports"
-                android:textColor="#616161"
+                android:textColor="@color/nav_unselected"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/nav_chat"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:clickable="true"
+            android:focusable="true"
+            android:background="?attr/selectableItemBackground">
+            <ImageView
+                android:id="@+id/nav_chat_icon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                app:srcCompat="@drawable/ic_chat"
+                app:tint="@color/nav_unselected"
+                android:contentDescription="@string/nav_chat" />
+            <TextView
+                android:id="@+id/nav_chat_text"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/nav_chat"
+                android:textColor="@color/nav_unselected"
                 android:textSize="12sp" />
         </LinearLayout>
 
@@ -170,19 +194,19 @@
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 app:srcCompat="@drawable/ic_more"
-                app:tint="#616161"
+                app:tint="@color/nav_unselected"
                 android:contentDescription="@string/nav_more" />
             <TextView
                 android:id="@+id/nav_more_text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/nav_more"
-                android:textColor="#616161"
+                android:textColor="@color/nav_unselected"
                 android:textSize="12sp" />
         </LinearLayout>
     </LinearLayout>
 
-    <FrameLayout
+    <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragment_container"
         android:layout_width="match_parent"
         android:layout_height="match_parent"

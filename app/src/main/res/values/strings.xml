@@ -7,6 +7,7 @@
     <string name="nav_products">Products</string>
     <string name="nav_sales">Sales</string>
     <string name="nav_reports">Reports</string>
+    <string name="nav_chat">Chat</string>
     <string name="nav_more">More</string>
     <string name="business_dashboard">Business Dashboard</string>
     <string name="estimated_net_profit_month">ESTIMATED NET PROFIT (MONTH)</string>
@@ -76,4 +77,14 @@
     <string name="quarterly">Quarterly</string>
     <string name="yearly">Yearly</string>
     <string name="sales_performance">Sales Performance</string>
+    <string name="total_loans">Total Loans</string>
+    <string name="record_new_loan">Record New Loan</string>
+    <string name="loan_management">Loan Management</string>
+    <string name="save_loan_record">SAVE LOAN RECORD</string>
+    <string name="search_borrower_hint">Search borrower...</string>
+    <string name="borrower_name">Borrower Name</string>
+    <string name="borrower_phone">Borrower Phone</string>
+    <string name="loan_amount">Loan Amount</string>
+    <string name="loan_details">Purpose/Details</string>
+    <string name="manage_loan_records">MANAGE LOAN RECORDS</string>
 </resources>

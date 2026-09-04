@@ -6,12 +6,16 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.util.Log;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.Locale;
 
 public class DBHelper extends SQLiteOpenHelper {
 
     private static final String DB_NAME = "materialsDB";
-    private static final int DB_VERSION = 10;
+    private static final int DB_VERSION = 11;
 
     public DBHelper(Context context){
         super(context, DB_NAME, null, DB_VERSION);
@@ -79,6 +83,19 @@ public class DBHelper extends SQLiteOpenHelper {
                 "action_type TEXT, " +
                 "details TEXT, " +
                 "timestamp TEXT)");
+
+        // 6. Loans
+        db.execSQL("CREATE TABLE IF NOT EXISTS loans (" +
+                "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
+                "borrower_name TEXT, " +
+                "borrower_phone TEXT, " +
+                "amount REAL, " +
+                "balance REAL, " +
+                "date TEXT, " +
+                "details TEXT, " +
+                "status TEXT DEFAULT 'PENDING', " +
+                "firebase_key TEXT, " +
+                "synced INTEGER DEFAULT 0)");
     }
 
     @Override
@@ -140,14 +157,19 @@ public class DBHelper extends SQLiteOpenHelper {
                 db.execSQL("ALTER TABLE sales_table ADD COLUMN sale_time TEXT");
             } catch (Exception e) {}
         }
-        if (oldVersion < 10) {
+        if (oldVersion < 11) {
             try {
-                db.execSQL("CREATE TABLE IF NOT EXISTS activities (" +
+                db.execSQL("CREATE TABLE IF NOT EXISTS loans (" +
                         "id INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                        "user_email TEXT, " +
-                        "action_type TEXT, " +
+                        "borrower_name TEXT, " +
+                        "borrower_phone TEXT, " +
+                        "amount REAL, " +
+                        "balance REAL, " +
+                        "date TEXT, " +
                         "details TEXT, " +
-                        "timestamp TEXT)");
+                        "status TEXT DEFAULT 'PENDING', " +
+                        "firebase_key TEXT, " +
+                        "synced INTEGER DEFAULT 0)");
             } catch (Exception e) {}
         }
     }
@@ -209,6 +231,14 @@ public class DBHelper extends SQLiteOpenHelper {
         db.update("expenses", cv, "id=?", new String[]{String.valueOf(id)});
     }
 
+    public void updateLoanFirebaseKey(int id, String key){
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("firebase_key", key);
+        cv.put("synced", 1);
+        db.update("loans", cv, "id=?", new String[]{String.valueOf(id)});
+    }
+
     public Cursor getAllData() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery("SELECT * FROM materials WHERE synced != -1", null);
@@ -229,6 +259,11 @@ public class DBHelper extends SQLiteOpenHelper {
         return db.rawQuery("SELECT * FROM expenses WHERE synced = 0", null);
     }
 
+    public Cursor getUnsyncedLoans(){
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT * FROM loans WHERE synced = 0", null);
+    }
+
     public Cursor getPendingDeletionData() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery("SELECT * FROM materials WHERE synced = -1", null);
@@ -242,6 +277,11 @@ public class DBHelper extends SQLiteOpenHelper {
     public Cursor getPendingDeletionExpenses() {
         SQLiteDatabase db = this.getReadableDatabase();
         return db.rawQuery("SELECT * FROM expenses WHERE synced = -1", null);
+    }
+
+    public Cursor getPendingDeletionLoans() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        return db.rawQuery("SELECT * FROM loans WHERE synced = -1", null);
     }
 
     public String getFirebaseKey(String name){
@@ -297,6 +337,20 @@ public class DBHelper extends SQLiteOpenHelper {
         db.update("expenses", cv, "id=?", new String[]{String.valueOf(id)});
     }
 
+    public void markLoanAsSynced(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("synced", 1);
+        db.update("loans", cv, "id=?", new String[]{String.valueOf(id)});
+    }
+
+    public void markLoanForDeletion(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("synced", -1);
+        db.update("loans", cv, "id=?", new String[]{String.valueOf(id)});
+    }
+
     public void deleteItemPermanently(String name) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete("materials", "item_name=?", new String[]{name});
@@ -310,6 +364,11 @@ public class DBHelper extends SQLiteOpenHelper {
     public void deleteExpensePermanently(int id) {
         SQLiteDatabase db = this.getWritableDatabase();
         db.delete("expenses", "id=?", new String[]{String.valueOf(id)});
+    }
+
+    public void deleteLoanPermanently(int id) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        db.delete("loans", "id=?", new String[]{String.valueOf(id)});
     }
 
     // ================= SALES METHODS =================
@@ -388,6 +447,28 @@ public class DBHelper extends SQLiteOpenHelper {
             db.update("expenses", cv, "id=?", new String[]{String.valueOf(c.getInt(0))});
         } else {
             db.insert("expenses", null, cv);
+        }
+        c.close();
+    }
+
+    public void upsertLoanFromFirebase(String key, String borrower, String phone, double amount, double balance, String date, String details, String status) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("borrower_name", borrower);
+        cv.put("borrower_phone", phone);
+        cv.put("amount", amount);
+        cv.put("balance", balance);
+        cv.put("date", date);
+        cv.put("details", details);
+        cv.put("status", status);
+        cv.put("firebase_key", key);
+        cv.put("synced", 1);
+
+        Cursor c = db.rawQuery("SELECT id FROM loans WHERE firebase_key = ?", new String[]{key});
+        if (c.moveToFirst()) {
+            db.update("loans", cv, "id=?", new String[]{String.valueOf(c.getInt(0))});
+        } else {
+            db.insert("loans", null, cv);
         }
         c.close();
     }
@@ -496,6 +577,67 @@ public class DBHelper extends SQLiteOpenHelper {
         return this.getReadableDatabase().rawQuery("SELECT * FROM expenses WHERE synced != -1 ORDER BY id DESC", null);
     }
 
+    // ================= LOANS METHODS =================
+
+    public boolean insertLoan(String borrower, String phone, double amount, String date, String details) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("borrower_name", borrower);
+        cv.put("borrower_phone", phone);
+        cv.put("amount", amount);
+        cv.put("balance", amount);
+        cv.put("date", date);
+        cv.put("details", details);
+        cv.put("status", "PENDING");
+        cv.put("synced", 0);
+        return db.insert("loans", null, cv) != -1;
+    }
+
+    public void updateLoanRecord(int id, String borrower, String phone, double amount, double balance, String details, String status) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues cv = new ContentValues();
+        cv.put("borrower_name", borrower);
+        cv.put("borrower_phone", phone);
+        cv.put("amount", amount);
+        cv.put("balance", balance);
+        cv.put("details", details);
+        cv.put("status", status);
+        cv.put("synced", 0);
+        db.update("loans", cv, "id=?", new String[]{String.valueOf(id)});
+    }
+
+    public void settleLoan(int id, double paidAmount) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        Cursor cursor = db.rawQuery("SELECT balance FROM loans WHERE id = ?", new String[]{String.valueOf(id)});
+        if (cursor.moveToFirst()) {
+            double currentBalance = cursor.getDouble(0);
+            double newBalance = Math.max(0, currentBalance - paidAmount);
+            ContentValues cv = new ContentValues();
+            cv.put("balance", newBalance);
+            if (newBalance <= 0) {
+                cv.put("status", "SETTLED");
+            }
+            cv.put("synced", 0);
+            db.update("loans", cv, "id=?", new String[]{String.valueOf(id)});
+        }
+        cursor.close();
+    }
+
+    public double getMonthlyLoans(String monthQuery) {
+        SQLiteDatabase db = this.getReadableDatabase();
+        double total = 0;
+        Cursor cursor = db.rawQuery("SELECT SUM(amount) FROM loans WHERE date LIKE ?", new String[]{"%" + monthQuery});
+        if (cursor != null && cursor.moveToFirst()) {
+            total = cursor.getDouble(0);
+            cursor.close();
+        }
+        return total;
+    }
+
+    public Cursor getAllLoans() {
+        return this.getReadableDatabase().rawQuery("SELECT * FROM loans WHERE synced != -1 ORDER BY id DESC", null);
+    }
+
     // ================= CRM METHODS =================
 
     public Cursor getCustomersWithDebt() {
@@ -602,7 +744,7 @@ public class DBHelper extends SQLiteOpenHelper {
             cv.put("user_email", user);
             cv.put("action_type", action);
             cv.put("details", details);
-            cv.put("timestamp", new java.text.SimpleDateFormat("dd/MM/yyyy HH:mm:ss", java.util.Locale.US).format(new java.util.Date()));
+            cv.put("timestamp", new SimpleDateFormat("dd/MM/yyyy HH:mm:ss", Locale.US).format(new Date()));
             db.insert("activities", null, cv);
         } catch (Exception e) {
             Log.e("DBHelper", "Error logging activity: " + e.getMessage());

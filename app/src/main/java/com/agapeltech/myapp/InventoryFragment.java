@@ -7,6 +7,7 @@ import android.database.Cursor;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -115,7 +116,7 @@ public class InventoryFragment extends Fragment {
                 loadFromSQLite();
                 if (activity != null) activity.refreshInventoryAutocompleteData();
             } catch (Exception e) {
-                android.util.Log.e("InventoryFragment", "Error saving item: " + e.getMessage());
+                Log.e("InventoryFragment", "Error saving item: " + e.getMessage());
                 if (getContext() != null) Toast.makeText(getContext(), "Invalid inputs", Toast.LENGTH_SHORT).show();
             }
         });
@@ -152,35 +153,47 @@ public class InventoryFragment extends Fragment {
         Context ctx = getContext();
         if (ctx == null) return;
         
-        try {
-            listData.clear();
-            Cursor cursor = dbHelper.getAllData(); 
-            if (cursor != null) {
-                int nameIdx = cursor.getColumnIndex("item_name");
-                int buyIdx = cursor.getColumnIndex("buying_price");
-                int sellIdx = cursor.getColumnIndex("selling_price");
-                int qtyIdx = cursor.getColumnIndex("stock_qty");
-                int threshIdx = cursor.getColumnIndex("low_stock_threshold");
-                int catIdx = cursor.getColumnIndex("category");
+        new Thread(() -> {
+            try {
+                final ArrayList<HashMap<String, String>> tempData = new ArrayList<>();
+                Cursor cursor = dbHelper.getAllData(); 
+                if (cursor != null) {
+                    int nameIdx = cursor.getColumnIndex("item_name");
+                    int buyIdx = cursor.getColumnIndex("buying_price");
+                    int sellIdx = cursor.getColumnIndex("selling_price");
+                    int qtyIdx = cursor.getColumnIndex("stock_qty");
+                    int threshIdx = cursor.getColumnIndex("low_stock_threshold");
+                    int catIdx = cursor.getColumnIndex("category");
 
-                while (cursor.moveToNext()) {
-                    HashMap<String, String> map = new HashMap<>();
-                    map.put("name", nameIdx != -1 ? cursor.getString(nameIdx) : "Unknown"); 
-                    map.put("buy", "Buy: UGX " + MainActivity.formatMoney(buyIdx != -1 ? cursor.getDouble(buyIdx) : 0)); 
-                    map.put("sell", "Sell: UGX " + MainActivity.formatMoney(sellIdx != -1 ? cursor.getDouble(sellIdx) : 0));
-                    map.put("qty_raw", "" + (qtyIdx != -1 ? cursor.getInt(qtyIdx) : 0));
-                    map.put("threshold", "" + (threshIdx != -1 ? cursor.getInt(threshIdx) : 5));
-                    map.put("category", catIdx != -1 ? cursor.getString(catIdx) : "General");
-                    listData.add(map);
+                    while (cursor.moveToNext()) {
+                        HashMap<String, String> map = new HashMap<>();
+                        map.put("name", nameIdx != -1 ? cursor.getString(nameIdx) : "Unknown"); 
+                        map.put("buy", "Buy: UGX " + MainActivity.formatMoney(buyIdx != -1 ? cursor.getDouble(buyIdx) : 0)); 
+                        map.put("sell", "Sell: UGX " + MainActivity.formatMoney(sellIdx != -1 ? cursor.getDouble(sellIdx) : 0));
+                        map.put("qty_raw", "" + (qtyIdx != -1 ? cursor.getInt(qtyIdx) : 0));
+                        map.put("threshold", "" + (threshIdx != -1 ? cursor.getInt(threshIdx) : 5));
+                        map.put("category", catIdx != -1 ? cursor.getString(catIdx) : "General");
+                        tempData.add(map);
+                    }
+                    cursor.close();
                 }
-                cursor.close();
+
+                if (getActivity() != null && isAdded()) {
+                    getActivity().runOnUiThread(() -> {
+                        Context currentCtx = getContext();
+                        if (currentCtx == null) return;
+                        listData.clear();
+                        listData.addAll(tempData);
+                        adapter = new MaterialRecyclerViewAdapter(currentCtx, listData, this::showOptionsDialog);
+                        if (recyclerView != null) recyclerView.setAdapter(adapter);
+                    });
+                }
+            } catch (Exception e) {
+                Log.e("InventoryFragment", "Error loading data: " + e.getMessage());
             }
-            adapter = new MaterialRecyclerViewAdapter(ctx, listData, this::showOptionsDialog);
-            if (recyclerView != null) recyclerView.setAdapter(adapter);
-        } catch (Exception e) {
-            android.util.Log.e("InventoryFragment", "Error loading data: " + e.getMessage());
-        }
+        }).start();
     }
+
 
     private void filterResults(String query) {
         Context ctx = getContext();

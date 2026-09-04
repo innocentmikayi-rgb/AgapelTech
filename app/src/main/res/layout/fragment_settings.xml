@@ -33,6 +33,15 @@
         android:layout_marginBottom="16dp" />
 
     <Button
+        android:id="@+id/btnManageLoans"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/manage_loan_records"
+        android:backgroundTint="#9C27B0"
+        android:textColor="#FFFFFF"
+        android:layout_marginBottom="16dp" />
+
+    <Button
         android:id="@+id/btnManageUsers"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

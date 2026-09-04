@@ -17,6 +17,10 @@
         android:icon="@drawable/ic_reports"
         android:title="@string/nav_reports" />
     <item
+        android:id="@+id/nav_chat"
+        android:icon="@drawable/ic_chat"
+        android:title="@string/nav_chat" />
+    <item
         android:id="@+id/nav_more"
         android:icon="@drawable/ic_more"
         android:title="@string/nav_more" />

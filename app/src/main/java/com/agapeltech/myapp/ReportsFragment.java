@@ -1,13 +1,17 @@
 package com.agapeltech.myapp;
 
 import android.app.AlertDialog;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.pdf.PdfDocument;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -62,7 +66,7 @@ public class ReportsFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_reports, container, false);
 
         dbHelper = new DBHelper(requireContext());
-        android.content.SharedPreferences prefs = requireContext().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE);
         currentUserRole = prefs.getString("role", "STAFF");
         currentUsername = prefs.getString("username", "Unknown");
 
@@ -109,90 +113,92 @@ public class ReportsFragment extends Fragment {
     }
 
     public void loadSalesHistoryFromSQLite() {
-        salesListData.clear();
-        Cursor cursor = dbHelper.getAllSalesRecords();
-        double totalSales = 0, totalProfit = 0, totalCredit = 0;
-        
-        if (cursor != null) {
-            int idIdx = cursor.getColumnIndex("id");
-            int dateIdx = cursor.getColumnIndex("sale_date");
-            int partIdx = cursor.getColumnIndex("particulars");
-            int qtyIdx = cursor.getColumnIndex("qty");
-            int spIdx = cursor.getColumnIndex("selling_price");
-            int paidIdx = cursor.getColumnIndex("actual_amount");
-            int balIdx = cursor.getColumnIndex("balance");
-            int statusIdx = cursor.getColumnIndex("status_tag");
-            int custIdx = cursor.getColumnIndex("customer_name");
-            int phoneIdx = cursor.getColumnIndex("customer_phone");
-            int timeIdx = cursor.getColumnIndex("sale_time");
-
-            while (cursor.moveToNext()) {
-                HashMap<String, String> map = new HashMap<>();
-                map.put("id", idIdx != -1 ? "" + cursor.getInt(idIdx) : "0");
-                map.put("date", dateIdx != -1 ? cursor.getString(dateIdx) : "");
-                map.put("particulars", partIdx != -1 ? cursor.getString(partIdx) : "");
-                map.put("qty", qtyIdx != -1 ? "" + cursor.getInt(qtyIdx) : "0");
-                map.put("sp", String.format(Locale.US, "%.0f", spIdx != -1 ? cursor.getDouble(spIdx) : 0));
-                map.put("paid", String.format(Locale.US, "%.0f", paidIdx != -1 ? cursor.getDouble(paidIdx) : 0));
-                map.put("balance", String.format(Locale.US, "%.0f", balIdx != -1 ? cursor.getDouble(balIdx) : 0));
-                map.put("status", statusIdx != -1 ? cursor.getString(statusIdx) : "Unknown");
-                map.put("customer", custIdx != -1 ? cursor.getString(custIdx) : "Walk-in");
-                map.put("phone", phoneIdx != -1 ? cursor.getString(phoneIdx) : "");
-                map.put("time", timeIdx != -1 ? cursor.getString(timeIdx) : "");
-                salesListData.add(map);
-
-                if (paidIdx != -1) totalSales += cursor.getDouble(paidIdx);
-                if (balIdx != -1) totalCredit += cursor.getDouble(balIdx);
-                // Profit calculation fix
-                int profIdx = cursor.getColumnIndex("actual_profit");
-                if (profIdx != -1) totalProfit += cursor.getDouble(profIdx);
-            }
-            cursor.close();
-        }
-        
-        txtReportTotalSales.setText(String.format(Locale.US, "UGX %s", formatMoney(totalSales)));
-        txtReportTotalProfit.setText(String.format(Locale.US, "UGX %s", formatMoney(totalProfit)));
-        txtReportTotalCredit.setText(String.format(Locale.US, "UGX %s", formatMoney(totalCredit)));
-
-        SalesRecyclerViewAdapter salesAdapter = new SalesRecyclerViewAdapter(requireContext(), salesListData, position -> {
-            HashMap<String, String> sale = salesListData.get(position);
+        new Thread(() -> {
+            final ArrayList<HashMap<String, String>> tempData = new ArrayList<>();
+            Cursor cursor = dbHelper.getAllSalesRecords();
+            double totalSales = 0, totalProfit = 0, totalCredit = 0;
             
-            java.util.ArrayList<String> optionsList = new java.util.ArrayList<>();
-            optionsList.add("Share Receipt");
-            optionsList.add("Settle Credit");
-            optionsList.add("Edit Record");
-            if ("MANAGER".equals(currentUserRole)) {
-                optionsList.add("Delete Record");
-            }
-            final String[] options = optionsList.toArray(new String[0]);
+            if (cursor != null) {
+                int idIdx = cursor.getColumnIndex("id");
+                int dateIdx = cursor.getColumnIndex("sale_date");
+                int partIdx = cursor.getColumnIndex("particulars");
+                int qtyIdx = cursor.getColumnIndex("qty");
+                int spIdx = cursor.getColumnIndex("selling_price");
+                int paidIdx = cursor.getColumnIndex("actual_amount");
+                int balIdx = cursor.getColumnIndex("balance");
+                int statusIdx = cursor.getColumnIndex("status_tag");
+                int custIdx = cursor.getColumnIndex("customer_name");
+                int phoneIdx = cursor.getColumnIndex("customer_phone");
+                int timeIdx = cursor.getColumnIndex("sale_time");
+                int profIdx = cursor.getColumnIndex("actual_profit");
 
-            new AlertDialog.Builder(requireContext()).setTitle("Manage Sale").setItems(options, (dialog, which) -> {
-                String choice = options[which];
-                if ("Share Receipt".equals(choice)) shareReceipt(sale);
-                else if ("Settle Credit".equals(choice)) showSettleDialog(sale.get("id"));
-                else if ("Edit Record".equals(choice)) showEditSaleDialog(sale);
-                else if ("Delete Record".equals(choice)) confirmDeleteSale(sale.get("id"));
-            }).show();
-        });
-        recyclerViewSales.setAdapter(salesAdapter);
-        
-        updateProfitPieChart();
+                while (cursor.moveToNext()) {
+                    HashMap<String, String> map = new HashMap<>();
+                    map.put("id", idIdx != -1 ? "" + cursor.getInt(idIdx) : "0");
+                    map.put("date", dateIdx != -1 ? cursor.getString(dateIdx) : "");
+                    map.put("particulars", partIdx != -1 ? cursor.getString(partIdx) : "");
+                    map.put("qty", qtyIdx != -1 ? "" + cursor.getInt(qtyIdx) : "0");
+                    map.put("sp", String.format(Locale.US, "%.0f", spIdx != -1 ? cursor.getDouble(spIdx) : 0));
+                    map.put("paid", String.format(Locale.US, "%.0f", paidIdx != -1 ? cursor.getDouble(paidIdx) : 0));
+                    map.put("balance", String.format(Locale.US, "%.0f", balIdx != -1 ? cursor.getDouble(balIdx) : 0));
+                    map.put("status", statusIdx != -1 ? cursor.getString(statusIdx) : "Unknown");
+                    map.put("customer", custIdx != -1 ? cursor.getString(custIdx) : "Walk-in");
+                    map.put("phone", phoneIdx != -1 ? cursor.getString(phoneIdx) : "");
+                    map.put("time", timeIdx != -1 ? cursor.getString(timeIdx) : "");
+                    tempData.add(map);
+
+                    if (paidIdx != -1) totalSales += cursor.getDouble(paidIdx);
+                    if (balIdx != -1) totalCredit += cursor.getDouble(balIdx);
+                    if (profIdx != -1) totalProfit += cursor.getDouble(profIdx);
+                }
+                cursor.close();
+            }
+            
+            final double finalSales = totalSales, finalProfit = totalProfit, finalCredit = totalCredit;
+            
+            // Also fetch pie chart data while we are in background
+            ArrayList<PieEntry> entries = new ArrayList<>();
+            HashMap<String, Double> categoryProfit = dbHelper.getCategoryWiseProfit();
+            for (String category : categoryProfit.keySet()) {
+                Double profitVal = categoryProfit.get(category);
+                float profit = profitVal != null ? profitVal.floatValue() : 0f;
+                if (profit > 0) entries.add(new PieEntry(profit, category));
+            }
+            if (entries.isEmpty()) entries.add(new PieEntry(1f, "No Sales"));
+
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> {
+                    salesListData.clear();
+                    salesListData.addAll(tempData);
+                    txtReportTotalSales.setText(String.format(Locale.US, "UGX %s", formatMoney(finalSales)));
+                    txtReportTotalProfit.setText(String.format(Locale.US, "UGX %s", formatMoney(finalProfit)));
+                    txtReportTotalCredit.setText(String.format(Locale.US, "UGX %s", formatMoney(finalCredit)));
+
+                    SalesRecyclerViewAdapter salesAdapter = new SalesRecyclerViewAdapter(requireContext(), salesListData, position -> {
+                        HashMap<String, String> sale = salesListData.get(position);
+                        ArrayList<String> optionsList = new ArrayList<>();
+                        optionsList.add("Share Receipt");
+                        optionsList.add("Settle Credit");
+                        optionsList.add("Edit Record");
+                        if ("MANAGER".equals(currentUserRole)) optionsList.add("Delete Record");
+                        final String[] options = optionsList.toArray(new String[0]);
+
+                        new AlertDialog.Builder(requireContext()).setTitle("Manage Sale").setItems(options, (dialog, which) -> {
+                            String choice = options[which];
+                            if ("Share Receipt".equals(choice)) shareReceipt(sale);
+                            else if ("Settle Credit".equals(choice)) showSettleDialog(sale.get("id"));
+                            else if ("Edit Record".equals(choice)) showEditSaleDialog(sale);
+                            else if ("Delete Record".equals(choice)) confirmDeleteSale(sale.get("id"));
+                        }).show();
+                    });
+                    recyclerViewSales.setAdapter(salesAdapter);
+                    updateProfitPieUI(entries);
+                });
+            }
+        }).start();
     }
 
-    private void updateProfitPieChart() {
-        ArrayList<PieEntry> entries = new ArrayList<>();
-        HashMap<String, Double> categoryProfit = dbHelper.getCategoryWiseProfit();
-        
-        for (String category : categoryProfit.keySet()) {
-            Double profitVal = categoryProfit.get(category);
-            float profit = profitVal != null ? profitVal.floatValue() : 0f;
-            if (profit > 0) {
-                entries.add(new PieEntry(profit, category));
-            }
-        }
-
-        if (entries.isEmpty()) entries.add(new PieEntry(1f, "No Sales"));
-
+    private void updateProfitPieUI(ArrayList<PieEntry> entries) {
         PieDataSet dataSet = new PieDataSet(entries, "Profit by Category");
         dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
         PieData data = new PieData(dataSet);
@@ -201,6 +207,24 @@ public class ReportsFragment extends Fragment {
         profitPieChart.animateY(1000);
         profitPieChart.invalidate();
     }
+
+    private void updateProfitPieChart() {
+        new Thread(() -> {
+            ArrayList<PieEntry> entries = new ArrayList<>();
+            HashMap<String, Double> categoryProfit = dbHelper.getCategoryWiseProfit();
+            for (String category : categoryProfit.keySet()) {
+                Double profitVal = categoryProfit.get(category);
+                float profit = profitVal != null ? profitVal.floatValue() : 0f;
+                if (profit > 0) entries.add(new PieEntry(profit, category));
+            }
+            if (entries.isEmpty()) entries.add(new PieEntry(1f, "No Sales"));
+            
+            if (getActivity() != null) {
+                getActivity().runOnUiThread(() -> updateProfitPieUI(entries));
+            }
+        }).start();
+    }
+
 
     private void shareDailyReport() {
         String today = new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(new Date());
@@ -343,7 +367,7 @@ public class ReportsFragment extends Fragment {
     }
 
     private void showSettleDialog(String rid) {
-        final EditText input = new EditText(requireContext()); input.setHint("Amount Paid"); input.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL);
+        final EditText input = new EditText(requireContext()); input.setHint("Amount Paid"); input.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         new AlertDialog.Builder(requireContext()).setTitle("Settle Credit").setView(input).setPositiveButton("Confirm", (dialog, which) -> {
             dbHelper.getWritableDatabase().execSQL("UPDATE sales_table SET actual_amount = actual_amount + " + input.getText().toString() + ", balance = balance - " + input.getText().toString() + ", synced = 0 WHERE id = " + rid);
             dbHelper.logActivity(currentUsername, "SETTLE CREDIT", "Sale ID: " + rid + ", Amount: " + input.getText().toString());
@@ -379,7 +403,7 @@ public class ReportsFragment extends Fragment {
                 }
                 c.close();
             } catch (Exception e) {
-                android.util.Log.e("ReportsFragment", "Error updating sale: " + e.getMessage());
+                Log.e("ReportsFragment", "Error updating sale: " + e.getMessage());
                 Toast.makeText(requireContext(), "Error updating sale", Toast.LENGTH_SHORT).show();
             }
         }).setNegativeButton("Cancel", null).show();
@@ -435,17 +459,17 @@ public class ReportsFragment extends Fragment {
         try {
             if (file.exists()) {
                 boolean deleted = file.delete();
-                if (!deleted) android.util.Log.w("ReportsFragment", "Could not delete old PDF");
+                if (!deleted) Log.w("ReportsFragment", "Could not delete old PDF");
             }
             document.writeTo(new FileOutputStream(file)); document.close();
             Uri path = FileProvider.getUriForFile(requireContext(), requireContext().getPackageName() + ".fileprovider", file);
             Intent intent = new Intent(Intent.ACTION_SEND); intent.setType("application/pdf"); intent.putExtra(Intent.EXTRA_STREAM, path); intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
             startActivity(Intent.createChooser(intent, "Share PDF"));
         } catch (IOException e) { 
-            android.util.Log.e("ReportsFragment", "PDF Generation Error: " + e.getMessage());
+            Log.e("ReportsFragment", "PDF Generation Error: " + e.getMessage());
             Toast.makeText(requireContext(), "PDF Error", Toast.LENGTH_SHORT).show(); 
         } catch (Exception e) {
-            android.util.Log.e("ReportsFragment", "Unexpected Error: " + e.getMessage());
+            Log.e("ReportsFragment", "Unexpected Error: " + e.getMessage());
         }
     }
 

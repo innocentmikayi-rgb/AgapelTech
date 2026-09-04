@@ -1,5 +1,6 @@
 package com.agapeltech.myapp;
 
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.os.Bundle;
@@ -44,7 +45,7 @@ public class SalesFragment extends Fragment {
         View view = inflater.inflate(R.layout.fragment_sales, container, false);
 
         dbHelper = new DBHelper(requireContext());
-        SharedPreferences prefs = requireContext().getSharedPreferences("user_session", android.content.Context.MODE_PRIVATE);
+        SharedPreferences prefs = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE);
         currentUserRole = prefs.getString("role", "STAFF");
         currentUsername = prefs.getString("username", "Unknown");
 
@@ -124,17 +125,27 @@ public class SalesFragment extends Fragment {
     }
 
     public void refreshInventoryAutocompleteData() {
-        inventoryProductList.clear();
-        Cursor cursor = dbHelper.getAllData();
-        if (cursor != null) {
-            while (cursor.moveToNext()) {
-                inventoryProductList.add(cursor.getString(1));
+        new Thread(() -> {
+            final ArrayList<String> tempProducts = new ArrayList<>();
+            Cursor cursor = dbHelper.getAllData();
+            if (cursor != null) {
+                while (cursor.moveToNext()) {
+                    tempProducts.add(cursor.getString(1));
+                }
+                cursor.close();
             }
-            cursor.close();
-        }
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, inventoryProductList);
-        saleParticulars.setAdapter(adapter);
+            if (getActivity() != null && isAdded()) {
+                getActivity().runOnUiThread(() -> {
+                    if (getContext() == null) return;
+                    inventoryProductList.clear();
+                    inventoryProductList.addAll(tempProducts);
+                    ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_dropdown_item_1line, inventoryProductList);
+                    saleParticulars.setAdapter(adapter);
+                });
+            }
+        }).start();
     }
+
 
     private void saveSalesTransactionRecord() {
         String p = saleParticulars.getText().toString().trim();

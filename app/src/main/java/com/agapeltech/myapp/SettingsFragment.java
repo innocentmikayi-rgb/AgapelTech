@@ -8,6 +8,7 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -15,6 +16,7 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
@@ -25,16 +27,21 @@ import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatDelegate;
 import androidx.fragment.app.Fragment;
 
+import com.google.firebase.auth.FirebaseAuth;
+
 import org.json.JSONObject;
 
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Objects;
+import java.util.Scanner;
 
 public class SettingsFragment extends Fragment {
 
-    private Button adminLoginBtn, btnManageExpenses, btnSwitchTheme, btnCheckUpdate, btnManageUsers, btnViewActivities;
+    private Button adminLoginBtn, btnManageExpenses, btnManageLoans, btnSwitchTheme, btnCheckUpdate, btnManageUsers, btnViewActivities;
     private DBHelper dbHelper;
     private String currentUserRole = "STAFF";
     private String currentUsername = "Unknown";
@@ -63,6 +70,7 @@ public class SettingsFragment extends Fragment {
     private void initViews(View v) {
         adminLoginBtn = v.findViewById(R.id.adminLoginBtn);
         btnManageExpenses = v.findViewById(R.id.btnManageExpenses);
+        btnManageLoans = v.findViewById(R.id.btnManageLoans);
         btnSwitchTheme = v.findViewById(R.id.btnSwitchTheme);
         btnCheckUpdate = v.findViewById(R.id.btnCheckUpdate);
         btnManageUsers = v.findViewById(R.id.btnManageUsers);
@@ -74,6 +82,12 @@ public class SettingsFragment extends Fragment {
     private void setupListeners() {
         adminLoginBtn.setOnClickListener(v -> showLogoutDialog());
         btnManageExpenses.setOnClickListener(v -> showExpenseRecordsDialog());
+        btnManageLoans.setOnClickListener(v -> {
+            MainActivity activity = (MainActivity) getActivity();
+            if (activity != null) {
+                activity.replaceFragment(new LoansFragment(), null);
+            }
+        });
         btnSwitchTheme.setOnClickListener(v -> toggleTheme());
         btnCheckUpdate.setOnClickListener(v -> checkForUpdates());
         btnManageUsers.setOnClickListener(v -> {
@@ -102,7 +116,7 @@ public class SettingsFragment extends Fragment {
                 .setTitle("Logout")
                 .setMessage("Are you sure you want to logout?")
                 .setPositiveButton("Logout", (dialog, which) -> {
-                    com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+                    FirebaseAuth.getInstance().signOut();
                     SharedPreferences.Editor editor = requireContext().getSharedPreferences("user_session", Context.MODE_PRIVATE).edit();
                     editor.clear();
                     editor.apply();
@@ -137,8 +151,8 @@ public class SettingsFragment extends Fragment {
 
         new Thread(() -> {
             try {
-                java.net.URL url = new java.net.URL(githubApiUrl);
-                java.net.HttpURLConnection conn = (java.net.HttpURLConnection) url.openConnection();
+                URL url = new URL(githubApiUrl);
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("GET");
                 conn.setRequestProperty("User-Agent", "AgapelTech-App");
                 conn.setRequestProperty("Accept", "application/vnd.github.v3+json");
@@ -146,7 +160,7 @@ public class SettingsFragment extends Fragment {
 
                 int responseCode = conn.getResponseCode();
                 if (responseCode == 200) {
-                    java.util.Scanner scanner = new java.util.Scanner(conn.getInputStream());
+                    Scanner scanner = new Scanner(conn.getInputStream());
                     String response = scanner.useDelimiter("\\A").next();
                     scanner.close();
 
@@ -191,7 +205,7 @@ public class SettingsFragment extends Fragment {
     }
 
     private void showExpenseRecordsDialog() {
-        android.widget.ListView eList = new android.widget.ListView(requireContext());
+        ListView eList = new ListView(requireContext());
         ArrayList<HashMap<String, String>> eData = new ArrayList<>();
         Cursor c = dbHelper.getAllExpenses();
         if (c != null) {
@@ -258,7 +272,7 @@ public class SettingsFragment extends Fragment {
     private void showEditExpenseDialog(HashMap<String, String> exp, AlertDialog parentDialog) {
         LinearLayout layout = new LinearLayout(requireContext()); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(50, 40, 50, 10);
         final EditText ed = new EditText(requireContext()); ed.setText(exp.get("desc")); layout.addView(ed);
-        final EditText ea = new EditText(requireContext()); ea.setText(exp.get("amt")); ea.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL); layout.addView(ea);
+        final EditText ea = new EditText(requireContext()); ea.setText(exp.get("amt")); ea.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL); layout.addView(ea);
         String[] cats = {"Rent", "Electricity", "Water", "Salary", "Transport", "Stock", "Other"};
         final Spinner sp = new Spinner(requireContext()); sp.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, cats));
         String currentExpCat = exp.get("cat");

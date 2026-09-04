@@ -3,6 +3,8 @@ package com.agapeltech.myapp;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Bundle;
+import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -29,6 +31,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Locale;
 
 public class AnalyticsFragment extends Fragment {
@@ -49,11 +52,7 @@ public class AnalyticsFragment extends Fragment {
         
         initViews(view);
         
-        if (checkIfDataExists()) {
-            loadAnalyticsData();
-        } else {
-            showNoDataMessage();
-        }
+        loadAnalyticsData();
 
         return view;
     }
@@ -68,7 +67,7 @@ public class AnalyticsFragment extends Fragment {
         // Add No Data TextView programmatically if not in layout
         txtNoData = new TextView(requireContext());
         txtNoData.setText("No sales data available for analytics yet. Please record some sales first!");
-        txtNoData.setGravity(android.view.Gravity.CENTER);
+        txtNoData.setGravity(Gravity.CENTER);
         txtNoData.setPadding(64, 100, 64, 100);
         txtNoData.setVisibility(View.GONE);
         ((ViewGroup)v).addView(txtNoData, 0);
@@ -92,11 +91,15 @@ public class AnalyticsFragment extends Fragment {
     private void loadAnalyticsData() {
         new Thread(() -> {
             try {
+                if (!checkIfDataExists()) {
+                    if (getActivity() != null) getActivity().runOnUiThread(this::showNoDataMessage);
+                    return;
+                }
+
                 String currentMonth = new SimpleDateFormat("MM/yyyy", Locale.US).format(new Date());
 
-                // Fetch data in background thread
+                // 1. Basic Stats
                 double avgTicket = dbHelper.getAverageTransactionValue(currentMonth);
-                
                 double totalMonthlyProfit = 0, totalMonthlyRevenue = 0;
                 Cursor c = dbHelper.getMonthlySalesRecords(currentMonth);
                 if (c != null) {
@@ -107,6 +110,38 @@ public class AnalyticsFragment extends Fragment {
                         if (profIdx != -1) totalMonthlyProfit += c.getDouble(profIdx);
                     }
                     c.close();
+                }
+
+                // 2. Top Products Data
+                ArrayList<BarEntry> topProductsEntries = new ArrayList<>();
+                ArrayList<String> topProductsLabels = new ArrayList<>();
+                Cursor cTop = dbHelper.getTopSellingProducts(5);
+                int idx = 0;
+                if (cTop != null) {
+                    while (cTop.moveToNext()) {
+                        topProductsEntries.add(new BarEntry(idx, cTop.getFloat(1)));
+                        topProductsLabels.add(cTop.getString(0));
+                        idx++;
+                    }
+                    cTop.close();
+                }
+
+                // 3. Trend Chart Data
+                ArrayList<Entry> revenueEntries = new ArrayList<>();
+                ArrayList<Entry> profitEntries = new ArrayList<>();
+                ArrayList<String> trendLabels = new ArrayList<>();
+                Calendar cal = Calendar.getInstance();
+                for (int i = 29; i >= 0; i--) {
+                    Calendar date = (Calendar) cal.clone();
+                    date.add(Calendar.DAY_OF_YEAR, -i);
+                    String dateStr = new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(date.getTime());
+                    
+                    HashMap<String, Double> totals = dbHelper.getDailyTotals(dateStr);
+                    Double salesVal = totals.get("sales");
+                    Double profitVal = totals.get("profit");
+                    revenueEntries.add(new Entry(29 - i, salesVal != null ? salesVal.floatValue() : 0f));
+                    profitEntries.add(new Entry(29 - i, profitVal != null ? profitVal.floatValue() : 0f));
+                    trendLabels.add(new SimpleDateFormat("dd/MM", Locale.US).format(date.getTime()));
                 }
 
                 final double finalAvg = avgTicket;
@@ -121,31 +156,18 @@ public class AnalyticsFragment extends Fragment {
                             txtProfitMargin.setText(String.format(Locale.US, "%.1f%%", margin));
                         }
                         
-                        setupTopProductsChart();
-                        setupTrendChart();
+                        setupTopProductsChart(topProductsEntries, topProductsLabels);
+                        setupTrendChart(revenueEntries, profitEntries, trendLabels);
                     });
                 }
             } catch (Exception e) {
-                android.util.Log.e("Analytics", "Error loading analytics: " + e.getMessage());
+                Log.e("Analytics", "Error loading analytics: " + e.getMessage());
             }
         }).start();
     }
 
-    private void setupTopProductsChart() {
-        ArrayList<BarEntry> entries = new ArrayList<>();
-        ArrayList<String> labels = new ArrayList<>();
-        
-        Cursor c = dbHelper.getTopSellingProducts(5);
-        int i = 0;
-        if (c != null) {
-            while (c.moveToNext()) {
-                entries.add(new BarEntry(i, c.getFloat(1)));
-                labels.add(c.getString(0));
-                i++;
-            }
-            c.close();
-        }
-
+    private void setupTopProductsChart(ArrayList<BarEntry> entries, ArrayList<String> labels) {
+        if (entries.isEmpty()) return;
         BarDataSet dataSet = new BarDataSet(entries, "Units Sold");
         dataSet.setColors(ColorTemplate.MATERIAL_COLORS);
         BarData data = new BarData(dataSet);
@@ -160,25 +182,8 @@ public class AnalyticsFragment extends Fragment {
         topProductsBarChart.invalidate();
     }
 
-    private void setupTrendChart() {
-        ArrayList<Entry> revenueEntries = new ArrayList<>();
-        ArrayList<Entry> profitEntries = new ArrayList<>();
-        ArrayList<String> labels = new ArrayList<>();
-        
-        Calendar cal = Calendar.getInstance();
-        for (int i = 29; i >= 0; i--) {
-            Calendar date = (Calendar) cal.clone();
-            date.add(Calendar.DAY_OF_YEAR, -i);
-            String dateStr = new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(date.getTime());
-            
-            java.util.HashMap<String, Double> totals = dbHelper.getDailyTotals(dateStr);
-            Double salesVal = totals.get("sales");
-            Double profitVal = totals.get("profit");
-            revenueEntries.add(new Entry(29 - i, salesVal != null ? salesVal.floatValue() : 0f));
-            profitEntries.add(new Entry(29 - i, profitVal != null ? profitVal.floatValue() : 0f));
-            labels.add(new SimpleDateFormat("dd/MM", Locale.US).format(date.getTime()));
-        }
-
+    private void setupTrendChart(ArrayList<Entry> revenueEntries, ArrayList<Entry> profitEntries, ArrayList<String> labels) {
+        if (revenueEntries.isEmpty()) return;
         LineDataSet revSet = new LineDataSet(revenueEntries, "Revenue");
         revSet.setColor(Color.BLUE);
         revSet.setCircleColor(Color.BLUE);
@@ -199,4 +204,5 @@ public class AnalyticsFragment extends Fragment {
         revenueProfitLineChart.animateX(1000);
         revenueProfitLineChart.invalidate();
     }
+
 }

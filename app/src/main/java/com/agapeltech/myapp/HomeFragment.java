@@ -7,6 +7,8 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.text.InputType;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -14,7 +16,9 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.RadioGroup;
+import android.widget.SimpleAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -43,12 +47,12 @@ import java.util.Objects;
 
 public class HomeFragment extends Fragment {
 
-    private TextView txtDashNetProfit, txtDashGrossSales, txtDashExpenses, txtDashDebt, txtWeeklyGrowth, 
+    private TextView txtDashNetProfit, txtDashGrossSales, txtDashExpenses, txtDashDebt, txtDashLoans, txtWeeklyGrowth, 
                      txtDashLowStockBadge, txtDashboardGreeting, txtDashboardInventoryCount, txtLowStockItems;
     private TextView txtComparisonTitle, txtComparisonValue, txtGraphTitle;
     private LineChart salesLineChart;
     private PieChart dashProfitPieChart;
-    private Button btnQuickExpense, btnQuickDebt;
+    private Button btnQuickExpense, btnQuickDebt, btnQuickLoan;
     private RadioGroup rgGraphRange;
     private View layoutLowStockAlert;
 
@@ -77,6 +81,7 @@ public class HomeFragment extends Fragment {
         txtDashGrossSales = v.findViewById(R.id.txtDashGrossSales);
         txtDashExpenses = v.findViewById(R.id.txtDashExpenses);
         txtDashDebt = v.findViewById(R.id.txtDashDebt);
+        txtDashLoans = v.findViewById(R.id.txtDashLoans);
         txtDashLowStockBadge = v.findViewById(R.id.txtDashLowStockBadge);
         txtDashboardGreeting = v.findViewById(R.id.txtDashboardGreeting);
         txtDashboardInventoryCount = v.findViewById(R.id.txtDashboardInventoryCount);
@@ -88,6 +93,7 @@ public class HomeFragment extends Fragment {
         dashProfitPieChart = v.findViewById(R.id.dashProfitPieChart);
         btnQuickExpense = v.findViewById(R.id.btnQuickExpense);
         btnQuickDebt = v.findViewById(R.id.btnQuickDebt);
+        btnQuickLoan = v.findViewById(R.id.btnQuickLoan);
         rgGraphRange = v.findViewById(R.id.rgGraphRange);
         layoutLowStockAlert = v.findViewById(R.id.layoutLowStockAlert);
         txtLowStockItems = v.findViewById(R.id.txtLowStockItems);
@@ -96,6 +102,7 @@ public class HomeFragment extends Fragment {
     private void setupListeners(View v) {
         btnQuickExpense.setOnClickListener(view -> showExpenseDialog());
         btnQuickDebt.setOnClickListener(view -> showDebtorsDialog());
+        btnQuickLoan.setOnClickListener(view -> showLoanDialog());
         
         Button btnAnalytics = v.findViewById(R.id.btnViewAdvancedAnalytics);
         if (btnAnalytics != null) {
@@ -108,10 +115,15 @@ public class HomeFragment extends Fragment {
         }
 
         rgGraphRange.setOnCheckedChangeListener((group, checkedId) -> {
-            if (checkedId == R.id.rbWeekly) updateSalesChart("weekly");
-            else if (checkedId == R.id.rbMonthly) updateSalesChart("monthly");
-            else if (checkedId == R.id.rbQuarterly) updateSalesChart("quarterly");
-            else if (checkedId == R.id.rbYearly) updateSalesChart("yearly");
+            String range = "weekly";
+            if (checkedId == R.id.rbMonthly) range = "monthly";
+            else if (checkedId == R.id.rbQuarterly) range = "quarterly";
+            else if (checkedId == R.id.rbYearly) range = "yearly";
+            
+            final String finalRange = range;
+            new Thread(() -> {
+                fetchSalesChartData(finalRange);
+            }).start();
         });
     }
 
@@ -131,8 +143,9 @@ public class HomeFragment extends Fragment {
                 cal.add(Calendar.DAY_OF_YEAR, -1);
                 String yesterday = sdfDate.format(cal.getTime());
 
+                // 1. Monthly Totals
                 double monthlySalesTotal = 0, monthlyProfitTotal = 0;
-                Cursor cSales = dbHelper.getMonthlySalesRecords("%" + currentMonth);
+                Cursor cSales = dbHelper.getMonthlySalesRecords(currentMonth);
                 if (cSales != null) {
                     while (cSales.moveToNext()) { 
                         monthlySalesTotal += cSales.getDouble(8); 
@@ -140,32 +153,47 @@ public class HomeFragment extends Fragment {
                     }
                     cSales.close();
                 }
-                
                 double monthlyExp = dbHelper.getMonthlyExpenses(currentMonth);
+                double monthlyLoans = dbHelper.getMonthlyLoans(currentMonth);
                 
+                // 2. Inventory Stats
                 int totalProducts = 0;
-                Cursor totalCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials", null);
+                Cursor totalCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials WHERE synced != -1", null);
                 if(totalCur.moveToFirst()) totalProducts = totalCur.getInt(0);
                 totalCur.close();
 
                 int lowStockCount = 0;
-                Cursor stockCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials WHERE stock_qty <= low_stock_threshold", null);
+                Cursor stockCur = dbHelper.getReadableDatabase().rawQuery("SELECT COUNT(*) FROM materials WHERE stock_qty <= low_stock_threshold AND synced != -1", null);
                 if(stockCur.moveToFirst()) lowStockCount = stockCur.getInt(0);
                 stockCur.close();
 
+                // 3. Comparison Stats
                 HashMap<String, Double> todayTotals = dbHelper.getDailyTotals(today);
                 HashMap<String, Double> yesterdayTotals = dbHelper.getDailyTotals(yesterday);
                 
+                // 4. Debt Stats
                 Cursor cDebt = dbHelper.getCustomersWithDebt();
                 double totalDebt = 0;
                 if (cDebt != null) { while (cDebt.moveToNext()) totalDebt += cDebt.getDouble(1); cDebt.close(); }
 
-                final double fSales = monthlySalesTotal, fProfit = monthlyProfitTotal, fExp = monthlyExp, fDebt = totalDebt;
+                // 5. Low Stock Details
+                StringBuilder lowStockSb = new StringBuilder();
+                Cursor cLow = dbHelper.getLowStockItems();
+                if (cLow != null) {
+                    while (cLow.moveToNext()) {
+                        lowStockSb.append("• ").append(cLow.getString(0)).append(" (").append(cLow.getInt(1)).append(" left)\n");
+                    }
+                    cLow.close();
+                }
+                final String lowStockDetails = lowStockSb.toString().trim();
+
+                final double fSales = monthlySalesTotal, fProfit = monthlyProfitTotal, fExp = monthlyExp, fDebt = totalDebt, fLoan = monthlyLoans;
                 final int fTotalProd = totalProducts, fLowStock = lowStockCount;
                 final HashMap<String, Double> fToday = todayTotals, fYest = yesterdayTotals;
 
-                if (getActivity() != null) {
+                if (getActivity() != null && isAdded()) {
                     getActivity().runOnUiThread(() -> {
+                        if (getContext() == null) return;
                         txtDashGrossSales.setText(String.format(Locale.US, "UGX %s", formatMoney(fSales)));
                         txtDashExpenses.setText(String.format(Locale.US, "UGX %s", formatMoney(fExp)));
                         txtDashNetProfit.setText(String.format(Locale.US, "UGX %s", formatMoney(fProfit - fExp)));
@@ -174,6 +202,7 @@ public class HomeFragment extends Fragment {
                         txtDashLowStockBadge.setText(String.format(Locale.US, "%d Items Low Stock", fLowStock));
                         txtDashLowStockBadge.setTextColor(fLowStock > 0 ? Color.parseColor("#FFD54F") : Color.parseColor("#81C784"));
                         txtDashDebt.setText("UGX " + formatMoney(fDebt));
+                        txtDashLoans.setText("UGX " + formatMoney(fLoan));
 
                         double todaySales = fToday.get("sales") != null ? fToday.get("sales") : 0;
                         double yesterdaySales = fYest.get("sales") != null ? fYest.get("sales") : 0;
@@ -187,34 +216,29 @@ public class HomeFragment extends Fragment {
                             txtComparisonValue.setTextColor(Color.GRAY);
                         }
                         
-                        updateSalesChart("weekly");
-                        updateProfitPieChart();
-                        checkLowStockItems();
+                        // Pie Chart Update
+                        updateProfitPieUI(fProfit, fExp);
+                        
+                        // Low Stock UI
+                        if (!lowStockDetails.isEmpty()) {
+                            layoutLowStockAlert.setVisibility(View.VISIBLE);
+                            txtLowStockItems.setText(lowStockDetails);
+                        } else {
+                            layoutLowStockAlert.setVisibility(View.GONE);
+                        }
                     });
                 }
+                
+                // Initial Chart Data (Weekly)
+                fetchSalesChartData("weekly");
+
             } catch (Exception e) {
-                android.util.Log.e("HomeFragment", "Error loading dashboard: " + e.getMessage());
+                Log.e("HomeFragment", "Error loading dashboard: " + e.getMessage());
             }
         }).start();
     }
 
-    private void checkLowStockItems() {
-        Cursor cLow = dbHelper.getLowStockItems();
-        if (cLow != null && cLow.getCount() > 0) {
-            layoutLowStockAlert.setVisibility(View.VISIBLE);
-            StringBuilder sb = new StringBuilder();
-            while (cLow.moveToNext()) {
-                sb.append("• ").append(cLow.getString(0)).append(" (").append(cLow.getInt(1)).append(" left)\n");
-            }
-            txtLowStockItems.setText(sb.toString().trim());
-            cLow.close();
-        } else {
-            layoutLowStockAlert.setVisibility(View.GONE);
-            if (cLow != null) cLow.close();
-        }
-    }
-
-    private void updateSalesChart(String range) {
+    private void fetchSalesChartData(String range) {
         ArrayList<Entry> entries = new ArrayList<>();
         ArrayList<String> labels = new ArrayList<>();
         SimpleDateFormat sdf = new SimpleDateFormat("dd/MM", Locale.US);
@@ -225,8 +249,6 @@ public class HomeFragment extends Fragment {
         else if (Objects.equals(range, "quarterly")) days = 90;
         else if (Objects.equals(range, "yearly")) days = 365;
 
-        txtGraphTitle.setText(String.format(Locale.US, "%s Sales Performance", range.substring(0, 1).toUpperCase() + range.substring(1)));
-
         for (int i = days - 1; i >= 0; i--) {
             Calendar c = (Calendar) cal.clone();
             c.add(Calendar.DAY_OF_YEAR, -i);
@@ -236,6 +258,16 @@ public class HomeFragment extends Fragment {
             entries.add(new Entry(days - 1 - i, salesVal != null ? salesVal.floatValue() : 0f));
             labels.add(sdf.format(c.getTime()));
         }
+
+        if (getActivity() != null && isAdded()) {
+            getActivity().runOnUiThread(() -> updateSalesChartUI(range, entries, labels));
+        }
+    }
+
+    private void updateSalesChartUI(String range, ArrayList<Entry> entries, ArrayList<String> labels) {
+        if (salesLineChart == null) return;
+        
+        txtGraphTitle.setText(String.format(Locale.US, "%s Sales Performance", range.substring(0, 1).toUpperCase() + range.substring(1)));
 
         LineDataSet dataSet = new LineDataSet(entries, "Gross Sales (UGX)");
         dataSet.setColor(Color.parseColor("#0D3B84"));
@@ -252,29 +284,15 @@ public class HomeFragment extends Fragment {
         salesLineChart.animateX(1000);
         salesLineChart.invalidate();
 
-        if (range.equals("weekly")) {
-            float last7 = 0, prev7 = 0;
-            for (int i = 0; i < 7; i++) last7 += entries.get(entries.size() - 1 - i).getY();
-            // This is simplified, just showing the badge logic
+        if (range.equals("weekly") && entries.size() >= 7) {
             txtWeeklyGrowth.setText("Performance calculated for " + range);
         }
     }
 
-    private void updateProfitPieChart() {
-        String currentMonth = new SimpleDateFormat("MM/yyyy", Locale.US).format(new Date());
-        double monthlyProfit = 0;
-        Cursor cSales = dbHelper.getMonthlySalesRecords("%" + currentMonth);
-        if (cSales != null) {
-            while (cSales.moveToNext()) { 
-                monthlyProfit += cSales.getDouble(9); 
-            }
-            cSales.close();
-        }
-        double monthlyExp = dbHelper.getMonthlyExpenses(currentMonth);
-
+    private void updateProfitPieUI(double profit, double expenses) {
         ArrayList<PieEntry> entries = new ArrayList<>();
-        entries.add(new PieEntry((float) monthlyProfit, "Profit"));
-        entries.add(new PieEntry((float) monthlyExp, "Expenses"));
+        entries.add(new PieEntry((float) profit, "Profit"));
+        entries.add(new PieEntry((float) expenses, "Expenses"));
 
         PieDataSet dataSet = new PieDataSet(entries, "");
         dataSet.setColors(Color.parseColor("#2E7D32"), Color.parseColor("#C62828"));
@@ -292,7 +310,7 @@ public class HomeFragment extends Fragment {
     private void showExpenseDialog() {
         LinearLayout layout = new LinearLayout(requireContext()); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(50, 40, 50, 10);
         final EditText ed = new EditText(requireContext()); ed.setHint("Description"); layout.addView(ed);
-        final EditText ea = new EditText(requireContext()); ea.setHint("Amount"); ea.setInputType(android.text.InputType.TYPE_CLASS_NUMBER | android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL); layout.addView(ea);
+        final EditText ea = new EditText(requireContext()); ea.setHint("Amount"); ea.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL); layout.addView(ea);
         String[] cats = {"Rent", "Electricity", "Water", "Salary", "Transport", "Stock", "Other"};
         final Spinner sp = new Spinner(requireContext()); sp.setAdapter(new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, cats)); layout.addView(sp);
         new AlertDialog.Builder(requireContext()).setTitle("New Expense").setView(layout).setPositiveButton("Save", (dialog, which) -> {
@@ -310,8 +328,37 @@ public class HomeFragment extends Fragment {
                     loadDashboardData();
                 }
             } catch (Exception e) {
-                android.util.Log.e("HomeFragment", "Error saving expense: " + e.getMessage());
+                Log.e("HomeFragment", "Error saving expense: " + e.getMessage());
                 Toast.makeText(requireContext(), "Failed to save expense", Toast.LENGTH_SHORT).show();
+            }
+        }).setNegativeButton("Cancel", null).show();
+    }
+
+    private void showLoanDialog() {
+        LinearLayout layout = new LinearLayout(requireContext()); layout.setOrientation(LinearLayout.VERTICAL); layout.setPadding(50, 40, 50, 10);
+        final EditText eb = new EditText(requireContext()); eb.setHint("Borrower Name"); layout.addView(eb);
+        final EditText ep = new EditText(requireContext()); ep.setHint("Borrower Phone"); ep.setInputType(InputType.TYPE_CLASS_PHONE); layout.addView(ep);
+        final EditText ea = new EditText(requireContext()); ea.setHint("Amount"); ea.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL); layout.addView(ea);
+        final EditText ed = new EditText(requireContext()); ed.setHint("Details/Purpose"); layout.addView(ed);
+        
+        new AlertDialog.Builder(requireContext()).setTitle("Record New Loan").setView(layout).setPositiveButton("Save", (dialog, which) -> {
+            try {
+                String date = new SimpleDateFormat("dd/MM/yyyy", Locale.US).format(new Date());
+                String borrower = eb.getText().toString();
+                String phone = ep.getText().toString();
+                double amount = Double.parseDouble(ea.getText().toString());
+                String details = ed.getText().toString();
+
+                if (dbHelper.insertLoan(borrower, phone, amount, date, details)) {
+                    dbHelper.logActivity(currentUsername, "NEW LOAN", "Borrower: " + borrower + ", Amt: " + amount);
+                    MainActivity activity = (MainActivity) getActivity();
+                    if (activity != null && NetworkHelper.isOnline(requireContext())) activity.syncOfflineData();
+                    Toast.makeText(requireContext(), "Loan Recorded", Toast.LENGTH_SHORT).show(); 
+                    loadDashboardData();
+                }
+            } catch (Exception e) {
+                Log.e("HomeFragment", "Error saving loan: " + e.getMessage());
+                Toast.makeText(requireContext(), "Failed to save loan", Toast.LENGTH_SHORT).show();
             }
         }).setNegativeButton("Cancel", null).show();
     }
@@ -335,8 +382,8 @@ public class HomeFragment extends Fragment {
             return;
         }
 
-        android.widget.ListView dList = new android.widget.ListView(getContext());
-        android.widget.SimpleAdapter dAdapter = new android.widget.SimpleAdapter(getContext(), debtorData, android.R.layout.simple_list_item_2,
+        ListView dList = new ListView(getContext());
+        SimpleAdapter dAdapter = new SimpleAdapter(getContext(), debtorData, android.R.layout.simple_list_item_2,
                 new String[]{"name", "debt"}, new int[]{android.R.id.text1, android.R.id.text2}) {
             @Override
             public View getView(int pos, View convert, ViewGroup parent) {
