@@ -6,6 +6,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.os.Build;
@@ -366,11 +367,11 @@ public class MainActivity extends AppCompatActivity {
                     json.put("name", name); json.put("buy", buy); json.put("sell", sell); 
                     json.put("qty", qty); json.put("cat", cat); json.put("threshold", mCur.getInt(7));
                     if (key != null) FirebaseHelper.updateRecord("/materials/" + key, json, () -> {
-                        if (!isFinishing()) runOnUiThread(() -> dbHelper.markAsSynced(id));
+                        if (!isFinishing()) dbHelper.markAsSynced(id);
                     });
                     else FirebaseHelper.createRecord("/materials", json, k -> { 
                         dbHelper.updateFirebaseKey(name, k); 
-                        if (!isFinishing()) runOnUiThread(() -> dbHelper.markAsSynced(id)); 
+                        if (!isFinishing()) dbHelper.markAsSynced(id); 
                     });
                 } catch (Exception e) {
                     Log.e("MainActivity", "Sync Error: " + e.getMessage());
@@ -459,11 +460,19 @@ public class MainActivity extends AppCompatActivity {
         FirebaseHelper.fetchAllData("/materials", jsonData -> {
             try {
                 if (jsonData == null || jsonData.equals("null")) return;
-                JSONObject json = new JSONObject(jsonData); Iterator<String> keys = json.keys();
-                while (keys.hasNext()) {
-                    String key = keys.next(); JSONObject obj = json.getJSONObject(key);
-                    dbHelper.insertOrUpdate(obj.getString("name"), obj.getDouble("buy"), obj.getDouble("sell"), obj.optInt("qty", 0), obj.optString("cat", "General"), obj.optInt("threshold", 5));
-                    dbHelper.updateFirebaseKey(obj.getString("name"), key);
+                JSONObject json = new JSONObject(jsonData); 
+                Iterator<String> keys = json.keys();
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                db.beginTransaction();
+                try {
+                    while (keys.hasNext()) {
+                        String key = keys.next(); JSONObject obj = json.getJSONObject(key);
+                        dbHelper.insertOrUpdate(obj.getString("name"), obj.getDouble("buy"), obj.getDouble("sell"), obj.optInt("qty", 0), obj.optString("cat", "General"), obj.optInt("threshold", 5));
+                        dbHelper.updateFirebaseKey(obj.getString("name"), key);
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
                 }
                 if (!isFinishing()) {
                     runOnUiThread(() -> {
@@ -479,10 +488,18 @@ public class MainActivity extends AppCompatActivity {
         FirebaseHelper.fetchAllData("/sales", jsonData -> {
             try {
                 if (jsonData == null || jsonData.equals("null")) return;
-                JSONObject json = new JSONObject(jsonData); Iterator<String> keys = json.keys();
-                while (keys.hasNext()) {
-                    String key = keys.next(); JSONObject obj = json.getJSONObject(key);
-                    dbHelper.upsertSaleFromFirebase(key, obj.getString("date"), obj.getString("item"), obj.getInt("qty"), obj.getDouble("bp"), obj.getDouble("sp"), obj.getDouble("paid"), obj.optString("customer", "Walk-in"), obj.optString("phone", ""), obj.optString("time", ""));
+                JSONObject json = new JSONObject(jsonData); 
+                Iterator<String> keys = json.keys();
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                db.beginTransaction();
+                try {
+                    while (keys.hasNext()) {
+                        String key = keys.next(); JSONObject obj = json.getJSONObject(key);
+                        dbHelper.upsertSaleFromFirebase(key, obj.getString("date"), obj.getString("item"), obj.getInt("qty"), obj.getDouble("bp"), obj.getDouble("sp"), obj.getDouble("paid"), obj.optString("customer", "Walk-in"), obj.optString("phone", ""), obj.optString("time", ""));
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
                 }
                 if (!isFinishing()) {
                     runOnUiThread(() -> {
@@ -499,10 +516,18 @@ public class MainActivity extends AppCompatActivity {
         FirebaseHelper.fetchAllData("/expenses", jsonData -> {
             try {
                 if (jsonData == null || jsonData.equals("null")) return;
-                JSONObject json = new JSONObject(jsonData); Iterator<String> keys = json.keys();
-                while (keys.hasNext()) {
-                    String key = keys.next(); JSONObject obj = json.getJSONObject(key);
-                    dbHelper.upsertExpenseFromFirebase(key, obj.getString("date"), obj.getString("desc"), obj.getDouble("amount"), obj.getString("cat"));
+                JSONObject json = new JSONObject(jsonData); 
+                Iterator<String> keys = json.keys();
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                db.beginTransaction();
+                try {
+                    while (keys.hasNext()) {
+                        String key = keys.next(); JSONObject obj = json.getJSONObject(key);
+                        dbHelper.upsertExpenseFromFirebase(key, obj.getString("date"), obj.getString("desc"), obj.getDouble("amount"), obj.getString("cat"));
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
                 }
                 if (!isFinishing()) {
                     runOnUiThread(() -> {
@@ -518,10 +543,18 @@ public class MainActivity extends AppCompatActivity {
         FirebaseHelper.fetchAllData("/loans", jsonData -> {
             try {
                 if (jsonData == null || jsonData.equals("null")) return;
-                JSONObject json = new JSONObject(jsonData); Iterator<String> keys = json.keys();
-                while (keys.hasNext()) {
-                    String key = keys.next(); JSONObject obj = json.getJSONObject(key);
-                    dbHelper.upsertLoanFromFirebase(key, obj.getString("borrower"), obj.getString("phone"), obj.getDouble("amount"), obj.getDouble("balance"), obj.getString("date"), obj.getString("details"), obj.getString("status"));
+                JSONObject json = new JSONObject(jsonData); 
+                Iterator<String> keys = json.keys();
+                SQLiteDatabase db = dbHelper.getWritableDatabase();
+                db.beginTransaction();
+                try {
+                    while (keys.hasNext()) {
+                        String key = keys.next(); JSONObject obj = json.getJSONObject(key);
+                        dbHelper.upsertLoanFromFirebase(key, obj.getString("borrower"), obj.getString("phone"), obj.getDouble("amount"), obj.getDouble("balance"), obj.getString("date"), obj.getString("details"), obj.getString("status"));
+                    }
+                    db.setTransactionSuccessful();
+                } finally {
+                    db.endTransaction();
                 }
                 if (!isFinishing()) {
                     runOnUiThread(() -> {

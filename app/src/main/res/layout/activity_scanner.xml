@@ -4,6 +4,17 @@
     android:layout_height="match_parent"
     android:background="#000000">
 
+    <!-- Extremely Subtle Watermark Logo -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/logo_agapel"
+        android:alpha="0.03"
+        android:scaleType="centerInside"
+        android:padding="80dp"
+        android:importantForAccessibility="no" />
+
+
     <androidx.camera.view.PreviewView
         android:id="@+id/previewView"
         android:layout_width="match_parent"

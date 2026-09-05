@@ -3,6 +3,7 @@ package com.agapeltech.myapp;
 import android.app.ProgressDialog;
 import android.content.Context;
 import android.os.Bundle;
+import androidx.appcompat.app.AlertDialog;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -91,7 +92,8 @@ public class UserManagementFragment extends Fragment {
                 .addOnCompleteListener(task -> {
                     if (task.isSuccessful()) {
                         String uid = task.getResult().getUser().getUid();
-                        FirebaseHelper.setUserRole(uid, role, success -> {
+                        User newUser = new User(uid, email, role);
+                        FirebaseHelper.saveUser(newUser, success -> {
                             progressDialog.dismiss();
                             secondaryAuth.signOut(); // Ensure secondary auth is clean
                             if (success) {
@@ -99,7 +101,7 @@ public class UserManagementFragment extends Fragment {
                                 editNewUserEmail.setText("");
                                 editNewUserPassword.setText("");
                             } else {
-                                Toast.makeText(requireContext(), "User created but role failed.", Toast.LENGTH_LONG).show();
+                                Toast.makeText(requireContext(), "User created but database update failed.", Toast.LENGTH_LONG).show();
                             }
                         });
                     } else {
@@ -110,16 +112,97 @@ public class UserManagementFragment extends Fragment {
     }
 
     private void loadUsersList() {
-        // Optional: Implement a simple adapter to show existing users from /users in database
         FirebaseDatabase.getInstance().getReference("users").addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                // Here you would populate the RecyclerView
-                // For brevity, skipping for now unless specifically requested
+                ArrayList<User> users = new ArrayList<>();
+                for (DataSnapshot ds : snapshot.getChildren()) {
+                    User user = ds.getValue(User.class);
+                    if (user != null) {
+                        // In case the email wasn't stored previously, we set the UID as the email placeholder or just show role
+                        if (user.getEmail() == null) {
+                            // If only role exists in the old structure
+                            String role = ds.child("role").getValue(String.class);
+                            String uid = ds.getKey();
+                            String emailPlaceholder = "User (" + (uid != null && uid.length() > 5 ? uid.substring(0, 5) : uid) + ")";
+                            user = new User(uid, emailPlaceholder, role != null ? role : "STAFF");
+                        }
+                        users.add(user);
+                    }
+                }
+                UserAdapter adapter = new UserAdapter(users, new UserAdapter.OnUserActionListener() {
+                    @Override
+                    public void onUserDelete(User user) {
+                        new AlertDialog.Builder(requireContext())
+                                .setTitle("Delete User")
+                                .setMessage("Are you sure you want to delete this user's record?")
+                                .setPositiveButton("Yes", (dialog, which) -> {
+                                    FirebaseHelper.deleteUser(user.getUid(), success -> {
+                                        if (success) {
+                                            Toast.makeText(requireContext(), "User record removed from database", Toast.LENGTH_SHORT).show();
+                                        } else {
+                                            Toast.makeText(requireContext(), "Failed to delete user record", Toast.LENGTH_SHORT).show();
+                                        }
+                                    });
+                                })
+                                .setNegativeButton("No", null)
+                                .show();
+                    }
+
+                    @Override
+                    public void onUserEdit(User user) {
+                        showEditUserDialog(user);
+                    }
+                });
+                rvUsersList.setAdapter(adapter);
             }
 
             @Override
-            public void onCancelled(@NonNull DatabaseError error) {}
+            public void onCancelled(@NonNull DatabaseError error) {
+                Toast.makeText(requireContext(), "Failed to load users: " + error.getMessage(), Toast.LENGTH_SHORT).show();
+            }
         });
+    }
+
+    private void showEditUserDialog(User user) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext());
+        builder.setTitle("Edit User: " + user.getEmail());
+
+        View view = LayoutInflater.from(requireContext()).inflate(R.layout.dialog_edit_user, null);
+        Spinner spinnerRole = view.findViewById(R.id.spinnerEditUserRole);
+        Button btnResetPassword = view.findViewById(R.id.btnResetPassword);
+
+        String[] roles = {"MANAGER", "STAFF"};
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(requireContext(), android.R.layout.simple_spinner_dropdown_item, roles);
+        spinnerRole.setAdapter(adapter);
+        
+        // Set current role
+        if ("MANAGER".equals(user.getRole())) spinnerRole.setSelection(0);
+        else spinnerRole.setSelection(1);
+
+        btnResetPassword.setOnClickListener(v -> {
+            FirebaseAuth.getInstance().sendPasswordResetEmail(user.getEmail())
+                    .addOnCompleteListener(task -> {
+                        if (task.isSuccessful()) {
+                            Toast.makeText(requireContext(), "Password reset email sent to " + user.getEmail(), Toast.LENGTH_LONG).show();
+                        } else {
+                            Toast.makeText(requireContext(), "Error: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
+        });
+
+        builder.setView(view);
+        builder.setPositiveButton("Update Role", (dialog, which) -> {
+            String newRole = spinnerRole.getSelectedItem().toString();
+            FirebaseHelper.setUserRole(user.getUid(), newRole, success -> {
+                if (success) {
+                    Toast.makeText(requireContext(), "Role updated to " + newRole, Toast.LENGTH_SHORT).show();
+                } else {
+                    Toast.makeText(requireContext(), "Failed to update role", Toast.LENGTH_SHORT).show();
+                }
+            });
+        });
+        builder.setNegativeButton("Cancel", null);
+        builder.show();
     }
 }

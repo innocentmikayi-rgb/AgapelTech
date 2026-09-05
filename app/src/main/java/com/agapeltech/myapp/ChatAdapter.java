@@ -1,5 +1,7 @@
 package com.agapeltech.myapp;
 
+import android.graphics.Color;
+import android.graphics.Typeface;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -17,10 +19,18 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
 
     private List<ChatMessage> messageList;
     private String currentUserEmail;
+    private boolean isAdmin;
+    private ChatActionListener actionListener;
 
-    public ChatAdapter(List<ChatMessage> messageList, String currentUserEmail) {
+    public interface ChatActionListener {
+        void onMessageLongClick(ChatMessage message);
+    }
+
+    public ChatAdapter(List<ChatMessage> messageList, String currentUserEmail, boolean isAdmin, ChatActionListener listener) {
         this.messageList = messageList;
         this.currentUserEmail = currentUserEmail;
+        this.isAdmin = isAdmin;
+        this.actionListener = listener;
     }
 
     @NonNull
@@ -33,7 +43,21 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
     @Override
     public void onBindViewHolder(@NonNull ChatViewHolder holder, int position) {
         ChatMessage message = messageList.get(position);
-        holder.textMessage.setText(message.getMessage() != null ? message.getMessage() : "");
+        
+        if (message.isDeleted()) {
+            holder.textMessage.setText("This message was deleted");
+            holder.textMessage.setTypeface(null, Typeface.ITALIC);
+            holder.textMessage.setTextColor(Color.GRAY);
+        } else {
+            String msgText = message.getMessage();
+            if (message.isEdited()) {
+                msgText += " (edited)";
+            }
+            holder.textMessage.setText(msgText != null ? msgText : "");
+            holder.textMessage.setTypeface(null, Typeface.NORMAL);
+            holder.textMessage.setTextColor(Color.BLACK);
+        }
+
         holder.textUser.setText(message.getSenderName() != null ? message.getSenderName() : "User");
         
         long time = message.getTimestamp();
@@ -43,7 +67,9 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
         holder.textTime.setText(sdf.format(new Date(time)));
 
         LinearLayout.LayoutParams params = (LinearLayout.LayoutParams) holder.messageContainer.getLayoutParams();
-        if (message.getSenderEmail() != null && message.getSenderEmail().equalsIgnoreCase(currentUserEmail)) {
+        boolean isMe = message.getSenderEmail() != null && message.getSenderEmail().equalsIgnoreCase(currentUserEmail);
+        
+        if (isMe) {
             params.gravity = Gravity.END;
             holder.messageContainer.setBackgroundResource(R.drawable.bg_message_out);
             holder.textUser.setVisibility(View.GONE);
@@ -53,6 +79,14 @@ public class ChatAdapter extends RecyclerView.Adapter<ChatAdapter.ChatViewHolder
             holder.textUser.setVisibility(View.VISIBLE);
         }
         holder.messageContainer.setLayoutParams(params);
+
+        holder.itemView.setOnLongClickListener(v -> {
+            if (!message.isDeleted() && (isMe || isAdmin)) {
+                if (actionListener != null) actionListener.onMessageLongClick(message);
+                return true;
+            }
+            return false;
+        });
     }
 
     @Override

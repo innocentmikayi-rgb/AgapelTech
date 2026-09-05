@@ -4,7 +4,6 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,6 +11,7 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.cardview.widget.CardView;
 import androidx.fragment.app.Fragment;
 
 import com.github.mikephil.charting.charts.HorizontalBarChart;
@@ -63,14 +63,7 @@ public class AnalyticsFragment extends Fragment {
         txtAvgTicketSize = v.findViewById(R.id.txtAvgTicketSize);
         txtProfitMargin = v.findViewById(R.id.txtProfitMargin);
         layoutAnalyticsContent = v.findViewById(R.id.layoutAnalyticsContent);
-        
-        // Add No Data TextView programmatically if not in layout
-        txtNoData = new TextView(requireContext());
-        txtNoData.setText("No sales data available for analytics yet. Please record some sales first!");
-        txtNoData.setGravity(Gravity.CENTER);
-        txtNoData.setPadding(64, 100, 64, 100);
-        txtNoData.setVisibility(View.GONE);
-        ((ViewGroup)v).addView(txtNoData, 0);
+        txtNoData = v.findViewById(R.id.txtNoData);
     }
 
     private boolean checkIfDataExists() {
@@ -84,8 +77,14 @@ public class AnalyticsFragment extends Fragment {
     }
 
     private void showNoDataMessage() {
-        if (layoutAnalyticsContent != null) layoutAnalyticsContent.setVisibility(View.GONE);
         if (txtNoData != null) txtNoData.setVisibility(View.VISIBLE);
+        // Hide charts but keep header
+        for (int i = 0; i < ((ViewGroup)layoutAnalyticsContent).getChildCount(); i++) {
+            View child = ((ViewGroup)layoutAnalyticsContent).getChildAt(i);
+            if (child.getId() != R.id.txtNoData && child instanceof CardView) {
+                child.setVisibility(View.GONE);
+            }
+        }
     }
 
     private void loadAnalyticsData() {

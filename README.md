@@ -11,11 +11,14 @@ A robust Android-based retail management solution designed for efficiency, accur
 - **Report Generation**: Export daily/weekly sales reports to PDF and Excel formats.
 - **Role-Based Access**: Secure Manager and Staff modes.
 
-## 🆕 What's New in v1.0.5
-- **Android 15 Compatibility**: Full support for Edge-to-Edge display and dynamic system insets.
-- **Improved Stability**: Refined background synchronization and fragment lifecycle management to prevent crashes on low-end devices.
-- **UI Optimizations**: Enhanced dashboard responsiveness and smoother navigation transitions.
-- **Enhanced Security**: Secure handling of network callbacks and background tasks.
+## 🆕 What's New in v1.0.6
+- **Stability Polish**: Further refinements to background sync logic to ensure zero data loss on unstable networks.
+- **Resource Optimization**: Reduced APK size through optimized Proguard/R8 rules.
+- **UI Enhancements**: Smoother transitions between fragments and improved dark mode contrast.
+- **Android 15 Ready**: Optimized Edge-to-Edge experience across all app sections.
+
+### Version History
+- **v1.0.5**: Initial Android 15 support and fundamental stability fixes.
 
 ## 🛠️ Technology Stack
 - **Language**: Java
@@ -32,7 +35,7 @@ A robust Android-based retail management solution designed for efficiency, accur
 4. Build and Run.
 
 ### For Users (Direct Install)
-1. Download the `AgapelTech-v1.0.5.apk` from the **Releases** section.
+1. Download the `AgapelTech-v1.0.6.apk` from the **Releases** section.
 2. Transfer the APK to your Android device (or download it directly).
 3. Open the file on your phone.
 4. If prompted, enable "Install from Unknown Sources" in your settings.

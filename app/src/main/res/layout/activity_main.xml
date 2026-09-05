@@ -8,6 +8,17 @@
     android:background="?android:windowBackground"
     tools:context=".MainActivity">
 
+    <!-- Subtle Watermark Logo -->
+    <ImageView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/logo_agapel"
+        android:alpha="0.05"
+        android:scaleType="centerInside"
+        android:padding="60dp"
+        android:importantForAccessibility="no" />
+
+
     <LinearLayout
         android:id="@+id/toolbar"
         android:layout_width="match_parent"

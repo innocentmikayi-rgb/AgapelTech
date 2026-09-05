@@ -47,6 +47,20 @@ public class FirebaseHelper {
         });
     }
 
+    public static void saveUser(User user, final SimpleCallback callback) {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(user.getUid());
+        ref.setValue(user).addOnCompleteListener(task -> {
+            if (callback != null) callback.onComplete(task.isSuccessful());
+        });
+    }
+
+    public static void deleteUser(String uid, final SimpleCallback callback) {
+        DatabaseReference ref = FirebaseDatabase.getInstance().getReference("users").child(uid);
+        ref.removeValue().addOnCompleteListener(task -> {
+            if (callback != null) callback.onComplete(task.isSuccessful());
+        });
+    }
+
     // --- Legacy REST Methods (Kept for existing Sync logic) ---
 
     public static void createRecord(final String path, final JSONObject data, final SaveCallback callback){
